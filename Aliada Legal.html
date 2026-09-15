@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aliada Legal | Trámites Internacionales</title>
+    <title>Aliada Legal | TrÃ¡mites Internacionales</title>
     
     <!-- React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -26,7 +26,15 @@
     
     <!-- Framer Motion -->
     <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
-
+    
+    <!-- intl-tel-input -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.12/build/css/intlTelInput.css">
+    <script src="https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.12/build/js/intlTelInput.min.js"></script>
+    <style>
+        .intl-tel-wrapper .iti { width: 100%; }
+        /* Ajustar los bordes del input de intl-tel-input */
+        .intl-tel-wrapper .iti__input { width: 100% !important; border-radius: 0.375rem !important; }
+    </style>
 
     <script>    
         
@@ -127,1015 +135,1164 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        // Extraemos Hooks de React
-        const { useState, useEffect } = React;
-        // Framer motion via CDN está en el objeto global window.Motion
-        const { motion, AnimatePresence } = window.Motion;
-        /* =========================================================================
-           DATOS EXTRAÍDOS DE EXCEL ("Aliada_Legal_Tracking.xlsx" y "COSTOS Y GANANCIAS.xlsx")
-           ========================================================================= */
-        const trackingDatabase = {
-            "TRK-001": {
-                cliente: "Juan Pérez (ejemplo)",
-                pais: "El Salvador",
-                servicio: "Combo: Documento + Apostilla + Traducción + Envío",
-                estado: "En gestión con aliado (Notario López)",
-                fechaEstimada: "2026-09-15"
-            }
-        };
+const { useState, useEffect, useRef, useMemo } = React;
+const { motion, AnimatePresence } = window.Motion;
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-        const countryData = {
-            "El Salvador": {
-                antecedentes: {
-                    tramite: "Solvencia PNC: presencial en consulado (huellas). Antecedentes de Centros Penales: sí se puede con poder.",
-                    poder: "Solvencia PNC: NO (exige presencia). Centros Penales: SÍ, poder notarial ante cónsul o notario.",
-                    requisitos: "DUI/pasaporte; para Centros Penales, poder notarial; para Solvencia PNC, cita en consulado + huellas"
-                },
-                nacimiento: {
-                    institucion: "RNPN",
-                    poder: "NO necesita poder notarial formal — carta poder simple es suficiente",
-                    requisitos: "Nombre completo, fecha y lugar de nacimiento, DUI si lo tiene, nombres de los padres; carta poder simple"
-                },
-                poderNotarial: {
-                    donde: "Notario salvadoreño o Cónsul de El Salvador en el país donde vive el cliente"
-                }
-            },
-            "México": {
-                antecedentes: {
-                    tramite: "Con carta poder (simple o notarial) + ficha de huellas tomada en consulado o agencia acreditada",
-                    poder: "SÍ, carta poder — más huellas del titular tomadas por separado",
-                    requisitos: "Copia de identificación; carta poder firmada; ficha de huellas tomada en consulado o agencia certificada"
-                },
-                nacimiento: {
-                    institucion: "Registro Civil estatal",
-                    poder: "NO necesita poder notarial formal",
-                    requisitos: "Nombre completo, fecha y lugar de nacimiento (estado/municipio), nombres de los padres, CURP si lo tiene; carta poder"
-                },
-                poderNotarial: {
-                    donde: "Notario público (estatal) o Cónsul mexicano en el país donde vive el cliente"
-                }
-            },
-            "Guatemala": {
-                antecedentes: {
-                    tramite: "100% en línea, autoservicio (cape.oj.gob.gt) — el propio cliente lo hace desde EE.UU. con internet",
-                    poder: "NO necesita poder — es autoservicio en línea por el titular",
-                    requisitos: "CUI/DPI del titular; correo electrónico; acceso a internet para hacer el trámite él mismo"
-                },
-                nacimiento: {
-                    institucion: "RENAP",
-                    poder: "NO necesita poder notarial formal",
-                    requisitos: "Nombre completo, fecha y lugar de nacimiento, CUI/DPI si lo tiene, nombres de los padres; carta poder"
-                },
-                poderNotarial: {
-                    donde: "Notario público guatemalteco o Cónsul de Guatemala"
-                }
-            },
-            "Honduras": {
-                antecedentes: {
-                    tramite: "Plataforma digital nacional (2026): 100% en línea desde cualquier país; o con apoderado/familiar para pago y apostilla",
-                    poder: "NO es obligatorio — pero SÍ ayuda tener apoderado con carta poder autenticada para agilizar pago/apostilla",
-                    requisitos: "DNI vigente; correo electrónico; si usa apoderado, carta poder autenticada + carnet de colegiado si es abogado"
-                },
-                nacimiento: {
-                    institucion: "RNP (Registro Nacional de las Personas)",
-                    poder: "NO necesita poder notarial formal",
-                    requisitos: "Nombre completo, fecha y lugar de nacimiento, tarjeta de identidad si la tiene; carta poder"
-                },
-                poderNotarial: {
-                    donde: "Notario público hondureño o Cónsul de Honduras"
-                }
-            },
-            "Colombia": {
-                antecedentes: {
-                    tramite: "100% en línea (Policía Nacional / Cancillería) — el titular lo hace con su número de cédula, sin presencia ni poder",
-                    poder: "NO necesita poder — es una consulta de base de datos en línea",
-                    requisitos: "Número de cédula; correo electrónico; el propio titular lo solicita en línea"
-                },
-                nacimiento: {
-                    institucion: "Registraduría Nacional del Estado Civil",
-                    poder: "NO necesita poder notarial formal",
-                    requisitos: "Nombre completo, número de cédula o registro previo, fecha y lugar de nacimiento; carta poder"
-                },
-                poderNotarial: {
-                    donde: "Notaría colombiana (con verificación biométrica) o Consulado de Colombia"
-                }
-            },
-            "Ecuador": {
-                antecedentes: {
-                    tramite: "En línea ante Ministerio del Interior con cédula; poder especial también se puede otorgar ante consulado",
-                    poder: "NO obligatorio para el certificado en sí; SÍ existe la opción de poder especial ante consulado si se necesita representación",
-                    requisitos: "Cédula del titular; si usa poder, otorgarlo ante consulado ecuatoriano"
-                },
-                nacimiento: {
-                    institucion: "Registro Civil, Identificación y Cedulación",
-                    poder: "NO necesita poder notarial formal",
-                    requisitos: "Nombre completo, cédula, fecha y lugar de nacimiento; carta poder"
-                },
-                poderNotarial: {
-                    donde: "Notaría ecuatoriana o Consulado de Ecuador"
-                }
-            },
-            "Perú": {
-                antecedentes: {
-                    tramite: "Presencial en consulado (huellas, 90 min) o mediante carta poder para que un tercero en Perú lo solicite",
-                    poder: "SÍ es válida la carta poder para solicitar el certificado a nombre del titular",
-                    requisitos: "DNI; foto tamaño pasaporte; pago; si usa poder, carta poder otorgada en consulado (USD 25-50 según el tipo)"
-                },
-                nacimiento: {
-                    institucion: "RENIEC",
-                    poder: "NO necesita poder notarial formal",
-                    requisitos: "Nombre completo, DNI, fecha y lugar de nacimiento; carta poder"
-                },
-                poderNotarial: {
-                    donde: "Notaría peruana o Consulado del Perú"
-                }
-            },
-            "Argentina": {
-                antecedentes: {
-                    tramite: "En línea con documento extranjero (Registro Nacional de Reincidencia); o mediante persona autorizada en Argentina con formularios de 'Solicitud' y 'Autorización' intervenidos por el consulado",
-                    poder: "NO necesita poder notarial formal — basta el formulario de Autorización validado por el consulado",
-                    requisitos: "Documento de identidad/pasaporte; si usa representante, formularios de Solicitud y Autorización firmados ante el consulado"
-                },
-                nacimiento: {
-                    institucion: "Registro del Estado Civil (provincial)",
-                    poder: "NO necesita poder notarial formal",
-                    requisitos: "Nombre completo, DNI, fecha y lugar de nacimiento, provincia; carta poder"
-                },
-                poderNotarial: {
-                    donde: "Escribanía (escribano público) o Consulado argentino"
-                }
-            }
-        };
+/* =========================================================================
+   DATOS (Aliada_Legal_Tracking.xlsx / COSTOS Y GANANCIAS.xlsx)
+   ========================================================================= */
 
-        const generalDocumentsData = [
-            {
-                documento: "Certificado de matrimonio",
-                tramite: "Registro Civil de cada país (misma institución que la partida de nacimiento)",
-                poder: "NO necesita poder notarial formal en los 15 países — mismo mecanismo que partida de nacimiento",
-                requisitos: "Identificación de ambos cónyuges; fecha y lugar del matrimonio; carta poder simple"
-            },
-            {
-                documento: "Actas de nacimiento de hijos",
-                tramite: "Registro Civil de cada país",
-                poder: "NO necesita poder notarial formal en los 15 países",
-                requisitos: "Identificación o acta previa del menor; datos completos de ambos padres; carta poder simple"
-            },
-            {
-                documento: "Certificado de soltería",
-                tramite: "Registro Civil o municipalidad de cada país",
-                poder: "NO necesita poder notarial formal en los 15 países",
-                requisitos: "Identificación vigente; carta poder simple"
-            },
-            {
-                documento: "Sentencia / certificado de divorcio",
-                tramite: "Juzgado o tribunal de familia donde se tramitó el divorcio",
-                poder: "SÍ, generalmente poder notarial formal — es expediente judicial, no registro civil simple",
-                requisitos: "Identificación; número de expediente o datos del divorcio (fecha, juzgado); poder notarial"
-            },
-            {
-                documento: "Historial académico apostillado",
-                tramite: "La universidad/colegio, más el Ministerio de Educación para apostillar",
-                poder: "Depende de la política de cada institución educativa, no del país — algunas piden carta simple, otras poder",
-                requisitos: "Identificación; datos de la institución y años de estudio; autorización según lo exija la institución"
-            },
-            {
-                documento: "Poder notarial (el documento en sí)",
-                tramite: "Notario o Consulado del país de origen, en el país donde vive el cliente",
-                poder: "Es el poder mismo — el cliente lo otorga directamente, nadie lo tramita en su nombre",
-                requisitos: "Identificación vigente; datos completos del apoderado (tu agencia/aliado); descripción específica de los actos que autoriza"
-            },
-            {
-                documento: "Pasaporte (copia)",
-                tramite: "No aplica — no es un trámite, es una copia que el cliente ya posee",
-                poder: "No aplica",
-                requisitos: "Copia legible y vigente del pasaporte"
-            }
-        ];
+const ETAPAS = [
+  'Solicitud recibida',
+  'Datos verificados',
+  'En gestión con el aliado',
+  'Apostilla y traducción',
+  'Enviado por mensajería'
+];
 
-        const cn = (...classes) => classes.filter(Boolean).join(" ");
+const trackingDatabase = {
+  'TRK-001': {
+    cliente: 'Juan Pérez', pais: 'El Salvador',
+    servicio: 'Antecedentes penales + apostilla + envío',
+    etapa: 2, actualizado: '10 sep 2026', fechaEstimada: '24 sep 2026',
+    nota: 'El notario aliado presentó la solicitud en Centros Penales. No necesitas hacer nada por ahora.'
+  },
+  'TRK-002': {
+    cliente: 'María López', pais: 'Guatemala',
+    servicio: 'Partida de nacimiento + apostilla + traducción',
+    etapa: 4, actualizado: '12 sep 2026', fechaEstimada: 'Entrega estimada: 17 sep 2026',
+    guia: 'DHL 4821 9930 115',
+    nota: 'El paquete va en tránsito hacia Houston, TX.'
+  },
+  'TRK-003': {
+    cliente: 'Carlos Ramírez', pais: 'Honduras',
+    servicio: 'Poder notarial especial',
+    etapa: 0, actualizado: '13 sep 2026', fechaEstimada: '27 sep 2026',
+    pendiente: 'Envíanos la copia de tu identificación vigente para continuar.',
+    nota: 'Recibimos tu solicitud y la asignamos a un notario en Tegucigalpa.'
+  }
+};
 
-        const Button = React.forwardRef(({ className, variant = "default", size = "default", ...props }, ref) => {
-            const variants = {
-                default: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm",
-                destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm",
-                outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground shadow-sm",
-                secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-                ghost: "hover:bg-accent hover:text-accent-foreground",
-                link: "text-primary underline-offset-4 hover:underline",
-            };
-            const sizes = {
-                default: "h-10 px-4 py-2",
-                sm: "h-9 rounded-md px-3",
-                lg: "h-11 rounded-md px-8",
-                icon: "h-10 w-10",
-            };
-            return (
-                <button
-                    ref={ref}
-                    className={cn(
-                        "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]",
-                        variants[variant],
-                        sizes[size],
-                        className
-                    )}
-                    {...props}
-                />
-            );
-        });
-        Button.displayName = "Button";
+const countryData = {
+  "El Salvador": {
+    antecedentes: {
+      tramite: "Solvencia PNC: presencial en consulado (huellas). Antecedentes de Centros Penales: sí se puede con poder.",
+      poder: "Solvencia PNC: NO (exige presencia). Centros Penales: SÍ, poder notarial ante cónsul o notario.",
+      requisitos: "DUI/pasaporte; para Centros Penales, poder notarial; para Solvencia PNC, cita en consulado + huellas"
+    },
+    nacimiento: {
+      institucion: "RNPN",
+      poder: "NO necesita poder notarial formal — carta poder simple es suficiente",
+      requisitos: "Nombre completo, fecha y lugar de nacimiento, DUI si lo tiene, nombres de los padres; carta poder simple"
+    },
+    poderNotarial: { donde: "Notario salvadoreño o Cónsul de El Salvador en el país donde vive el cliente" }
+  },
+  "México": {
+    antecedentes: {
+      tramite: "Con carta poder (simple o notarial) + ficha de huellas tomada en consulado o agencia acreditada",
+      poder: "SÍ, carta poder — más huellas del titular tomadas por separado",
+      requisitos: "Copia de identificación; carta poder firmada; ficha de huellas tomada en consulado o agencia certificada"
+    },
+    nacimiento: {
+      institucion: "Registro Civil estatal",
+      poder: "NO necesita poder notarial formal",
+      requisitos: "Nombre completo, fecha y lugar de nacimiento (estado/municipio), nombres de los padres, CURP si lo tiene; carta poder"
+    },
+    poderNotarial: { donde: "Notario público (estatal) o Cónsul mexicano en el país donde vive el cliente" }
+  },
+  "Guatemala": {
+    antecedentes: {
+      tramite: "100% en línea, autoservicio (cape.oj.gob.gt) — el propio cliente lo hace desde EE.UU. con internet",
+      poder: "NO necesita poder — es autoservicio en línea por el titular",
+      requisitos: "CUI/DPI del titular; correo electrónico; acceso a internet para hacer el trámite él mismo"
+    },
+    nacimiento: {
+      institucion: "RENAP",
+      poder: "NO necesita poder notarial formal",
+      requisitos: "Nombre completo, fecha y lugar de nacimiento, CUI/DPI si lo tiene, nombres de los padres; carta poder"
+    },
+    poderNotarial: { donde: "Notario público guatemalteco o Cónsul de Guatemala" }
+  },
+  "Honduras": {
+    antecedentes: {
+      tramite: "Plataforma digital nacional (2026): 100% en línea desde cualquier país; o con apoderado/familiar para pago y apostilla",
+      poder: "NO es obligatorio — pero SÍ ayuda tener apoderado con carta poder autenticada para agilizar pago/apostilla",
+      requisitos: "DNI vigente; correo electrónico; si usa apoderado, carta poder autenticada + carnet de colegiado si es abogado"
+    },
+    nacimiento: {
+      institucion: "RNP (Registro Nacional de las Personas)",
+      poder: "NO necesita poder notarial formal",
+      requisitos: "Nombre completo, fecha y lugar de nacimiento, tarjeta de identidad si la tiene; carta poder"
+    },
+    poderNotarial: { donde: "Notario público hondureño o Cónsul de Honduras" }
+  },
+  "Colombia": {
+    antecedentes: {
+      tramite: "100% en línea (Policía Nacional / Cancillería) — el titular lo hace con su número de cédula, sin presencia ni poder",
+      poder: "NO necesita poder — es una consulta de base de datos en línea",
+      requisitos: "Número de cédula; correo electrónico; el propio titular lo solicita en línea"
+    },
+    nacimiento: {
+      institucion: "Registraduría Nacional del Estado Civil",
+      poder: "NO necesita poder notarial formal",
+      requisitos: "Nombre completo, número de cédula o registro previo, fecha y lugar de nacimiento; carta poder"
+    },
+    poderNotarial: { donde: "Notaría colombiana (con verificación biométrica) o Consulado de Colombia" }
+  },
+  "Ecuador": {
+    antecedentes: {
+      tramite: "En línea ante Ministerio del Interior con cédula; poder especial también se puede otorgar ante consulado",
+      poder: "NO obligatorio para el certificado en sí; SÍ existe la opción de poder especial ante consulado si se necesita representación",
+      requisitos: "Cédula del titular; si usa poder, otorgarlo ante consulado ecuatoriano"
+    },
+    nacimiento: {
+      institucion: "Registro Civil, Identificación y Cedulación",
+      poder: "NO necesita poder notarial formal",
+      requisitos: "Nombre completo, cédula, fecha y lugar de nacimiento; carta poder"
+    },
+    poderNotarial: { donde: "Notaría ecuatoriana o Consulado de Ecuador" }
+  },
+  "Perú": {
+    antecedentes: {
+      tramite: "Presencial en consulado (huellas, 90 min) o mediante carta poder para que un tercero en Perú lo solicite",
+      poder: "SÍ es válida la carta poder para solicitar el certificado a nombre del titular",
+      requisitos: "DNI; foto tamaño pasaporte; pago; si usa poder, carta poder otorgada en consulado (USD 25-50 según el tipo)"
+    },
+    nacimiento: {
+      institucion: "RENIEC",
+      poder: "NO necesita poder notarial formal",
+      requisitos: "Nombre completo, DNI, fecha y lugar de nacimiento; carta poder"
+    },
+    poderNotarial: { donde: "Notaría peruana o Consulado del Perú" }
+  },
+  "Argentina": {
+    antecedentes: {
+      tramite: "En línea con documento extranjero (Registro Nacional de Reincidencia); o mediante persona autorizada en Argentina con formularios de 'Solicitud' y 'Autorización' intervenidos por el consulado",
+      poder: "NO necesita poder notarial formal — basta el formulario de Autorización validado por el consulado",
+      requisitos: "Documento de identidad/pasaporte; si usa representante, formularios de Solicitud y Autorización firmados ante el consulado"
+    },
+    nacimiento: {
+      institucion: "Registro del Estado Civil (provincial)",
+      poder: "NO necesita poder notarial formal",
+      requisitos: "Nombre completo, DNI, fecha y lugar de nacimiento, provincia; carta poder"
+    },
+    poderNotarial: { donde: "Escribanía (escribano público) o Consulado argentino" }
+  }
+};
 
-        const Input = React.forwardRef(({ className, type, ...props }, ref) => {
-            return (
-                <input
-                    type={type}
-                    className={cn(
-                        "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-                        className
-                    )}
-                    ref={ref}
-                    {...props}
-                />
-            );
-        });
-        Input.displayName = "Input";
+const generalDocumentsData = [
+  { documento: "Certificado de matrimonio", tramite: "Registro Civil de cada país (misma institución que la partida de nacimiento)", poder: "NO necesita poder notarial formal en los 15 países — mismo mecanismo que partida de nacimiento", requisitos: "Identificación de ambos cónyuges; fecha y lugar del matrimonio; carta poder simple" },
+  { documento: "Actas de nacimiento de hijos", tramite: "Registro Civil de cada país", poder: "NO necesita poder notarial formal en los 15 países", requisitos: "Identificación o acta previa del menor; datos completos de ambos padres; carta poder simple" },
+  { documento: "Certificado de soltería", tramite: "Registro Civil o municipalidad de cada país", poder: "NO necesita poder notarial formal en los 15 países", requisitos: "Identificación vigente; carta poder simple" },
+  { documento: "Sentencia / certificado de divorcio", tramite: "Juzgado o tribunal de familia donde se tramitó el divorcio", poder: "SÍ, generalmente poder notarial formal — es expediente judicial, no registro civil simple", requisitos: "Identificación; número de expediente o datos del divorcio (fecha, juzgado); poder notarial" },
+  { documento: "Historial académico apostillado", tramite: "La universidad/colegio, más el Ministerio de Educación para apostillar", poder: "Depende de la política de cada institución educativa, no del país — algunas piden carta simple, otras poder", requisitos: "Identificación; datos de la institución y años de estudio; autorización según lo exija la institución" },
+  { documento: "Poder notarial (el documento en sí)", tramite: "Notario o Consulado del país de origen, en el país donde vive el cliente", poder: "Es el poder mismo — el cliente lo otorga directamente, nadie lo tramita en su nombre", requisitos: "Identificación vigente; datos completos del apoderado (tu agencia/aliado); descripción específica de los actos que autoriza" },
+  { documento: "Pasaporte (copia)", tramite: "No aplica — no es un trámite, es una copia que el cliente ya posee", poder: "No aplica", requisitos: "Copia legible y vigente del pasaporte" }
+];
 
-        const Card = React.forwardRef(({ className, ...props }, ref) => (
-            <div ref={ref} className={cn("rounded-xl border bg-card text-card-foreground shadow-sm", className)} {...props} />
-        ));
-        Card.displayName = "Card";
+const PAISES = Object.keys(countryData);
+const DOCUMENTOS = [
+  'Antecedentes penales',
+  'Partida de nacimiento',
+  'Poder notarial',
+  ...generalDocumentsData.filter(d => d.documento !== 'Poder notarial (el documento en sí)').map(d => d.documento)
+];
 
-        const CardHeader = React.forwardRef(({ className, ...props }, ref) => (
-            <div ref={ref} className={cn("flex flex-col space-y-1.5 p-6", className)} {...props} />
-        ));
-        CardHeader.displayName = "CardHeader";
+/* =========================================================================
+   UTILIDADES
+   ========================================================================= */
 
-        const CardTitle = React.forwardRef(({ className, ...props }, ref) => (
-            <h3 ref={ref} className={cn("font-semibold leading-none tracking-tight", className)} {...props} />
-        ));
-        CardTitle.displayName = "CardTitle";
+const cn = (...c) => c.filter(Boolean).join(' ');
 
-        const CardDescription = React.forwardRef(({ className, ...props }, ref) => (
-            <p ref={ref} className={cn("text-sm text-muted-foreground", className)} {...props} />
-        ));
-        CardDescription.displayName = "CardDescription";
+// Traduce el texto libre de "¿necesita poder?" a un estado legible de un vistazo
+const poderFlag = (txt = '') => {
+  const t = txt.trim().toLowerCase();
+  if (t.startsWith('no aplica')) return 'na';
+  if (t.startsWith('es el poder')) return 'na';
+  if (t.startsWith('depende')) return 'depende';
+  if (t.startsWith('no')) return 'no';
+  if (t.startsWith('sí') || t.startsWith('si')) return 'si';
+  return 'depende';
+};
 
-        const CardContent = React.forwardRef(({ className, ...props }, ref) => (
-            <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
-        ));
-        CardContent.displayName = "CardContent";
+const FLAG_META = {
+  si:      { label: 'Necesitas un poder notarial', cls: 'bg-yellow-50 text-yellow-800 border-[#F2A900]/40' },
+  no:      { label: 'Sin poder notarial',          cls: 'bg-emerald-50 text-emerald-800 border-emerald-200' },
+  depende: { label: 'Depende de tu caso',          cls: 'bg-blue-50 text-[#003B73] border-[#003B73]/20' },
+  na:      { label: 'No aplica',                   cls: 'bg-slate-100 text-gray-500 border-gray-200' }
+};
 
-        const CardFooter = React.forwardRef(({ className, ...props }, ref) => (
-            <div ref={ref} className={cn("flex items-center p-6 pt-0", className)} {...props} />
-        ));
-        CardFooter.displayName = "CardFooter";
+// Requisitos concretos para la combinación país + documento elegida en el asistente
+function resolverRequisitos(pais, documento) {
+  if (!pais || !documento) return null;
+  const c = countryData[pais];
+  if (!c) return null;
+  if (documento === 'Antecedentes penales')
+    return { tramite: c.antecedentes.tramite, poder: c.antecedentes.poder, requisitos: c.antecedentes.requisitos };
+  if (documento === 'Partida de nacimiento')
+    return { tramite: `Institución: ${c.nacimiento.institucion}`, poder: c.nacimiento.poder, requisitos: c.nacimiento.requisitos };
+  if (documento === 'Poder notarial')
+    return { tramite: `Se otorga ante: ${c.poderNotarial.donde}`, poder: 'Es el poder mismo — lo otorgas tú directamente', requisitos: 'Identificación vigente, datos del apoderado y descripción específica de los actos que autorizas' };
+  const g = generalDocumentsData.find(d => d.documento === documento);
+  return g ? { tramite: g.tramite, poder: g.poder, requisitos: g.requisitos } : null;
+}
 
-        const Label = React.forwardRef(({ className, ...props }, ref) => (
-            <label ref={ref} className={cn("text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70", className)} {...props} />
-        ));
-        Label.displayName = "Label";
+const emailOk = v => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim());
 
-        const Select = React.forwardRef(({ className, ...props }, ref) => (
-            <select ref={ref} className={cn("flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 appearance-none", className)} {...props} />
-        ));
-        Select.displayName = "Select";
+const nuevoCodigo = () => 'TRK-' + String(Math.floor(100 + Math.random() * 899));
+
+const fechaEstimada = () => {
+  const d = new Date(); d.setDate(d.getDate() + 14);
+  return d.toLocaleDateString('es-SV', { day: 'numeric', month: 'short', year: 'numeric' });
+};
+
+const hoy = () => new Date().toLocaleDateString('es-SV', { day: 'numeric', month: 'short', year: 'numeric' });
+
+const irA = (id) => {
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
+};
 
 
-        function App() {
-            const [currentPage, setCurrentPage] = useState('home');
-            const [trackingId, setTrackingId] = useState('');
-            const [activeTab, setActiveTab] = useState('individuales');
-            const [selectedCountry, setSelectedCountry] = useState("El Salvador");
-            const [openAccordion, setOpenAccordion] = useState(null);
+/* =========================================================================
+   PRIMITIVAS DE UI (Flowbite Styled)
+   ========================================================================= */
 
-            const toggleAccordion = (index) => {
-                setOpenAccordion(openAccordion === index ? null : index);
-            };
+const focusRing = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2';
 
-            // Lógica de SweetAlert para el rastreo del documento
-            const handleTracking = (e) => {
-                e.preventDefault();
-                const result = trackingDatabase[trackingId.toUpperCase()];
-                
-                if (result) {
-                    Swal.fire({
-                        title: 'Estado del Trámite',
-                        html: `
-                            <div style="text-align: left; margin-top: 15px; font-size: 14px; color: #4a5568;">
-                                <p style="margin-bottom: 8px;"><strong>Cliente:</strong> ${result.cliente}</p>
-                                <p style="margin-bottom: 8px;"><strong>Servicio:</strong> ${result.servicio}</p>
-                                <p style="margin-bottom: 8px;"><strong>País:</strong> ${result.pais}</p>
-                                <p style="margin-bottom: 8px;"><strong>Estado Actual:</strong> <span style="color: #003B73; font-weight: bold;">${result.estado}</span></p>
-                                <p style="margin-bottom: 8px;"><strong>Fecha Estimada:</strong> ${result.fechaEstimada}</p>
-                            </div>
-                        `,
-                        icon: 'info',
-                        confirmButtonColor: '#003B73'
-                    });
-                } else {
-                    Swal.fire({
-                        title: 'Trámite no encontrado',
-                        text: 'El código de rastreo no existe en la base de datos. (Prueba con TRK-001)',
-                        icon: 'error',
-                        confirmButtonColor: '#003B73'
-                    });
-                }
-            };
+const Button = React.forwardRef(({ className, variant = 'primary', size = 'md', ...props }, ref) => {
+  const variants = {
+    primary:   'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm focus:ring-4 focus:ring-primary/30 border border-transparent',
+    accent:    'bg-[#F2A900] text-white hover:bg-[#d89700] border border-transparent font-semibold shadow-sm focus:ring-4 focus:ring-[#F2A900]/30',
+    outline:   'border border-input bg-background hover:bg-accent hover:text-accent-foreground shadow-sm',
+    ghost:     'hover:bg-accent hover:text-accent-foreground',
+    quiet:     'text-primary underline-offset-4 hover:underline'
+  };
+  const sizes = { sm: 'h-9 px-3 text-sm rounded-lg', md: 'h-11 px-5 text-sm rounded-lg', lg: 'h-12 px-6 text-base rounded-lg' };
+  return <button ref={ref} className={cn('inline-flex items-center justify-center gap-2 font-medium transition-colors disabled:opacity-50 disabled:pointer-events-none', variants[variant], sizes[size], className)} {...props} />;
+});
+Button.displayName = "Button";
 
-            // Lógica de SweetAlert simulando pasarela UglyCash
-            const handleUglyCashPayment = () => {
-                Swal.fire({
-                    title: 'Pagar con UglyCash',
-                    text: 'Serás redirigido a la aplicación para procesar tu pago de manera rápida y sin comisiones ocultas.',
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonColor: '#000000',
-                    cancelButtonColor: '#d33',
-                    confirmButtonText: 'Continuar a UglyCash',
-                    cancelButtonText: 'Cancelar'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        Swal.fire(
-                            '¡Redirigiendo!',
-                            'Generando link de pago seguro...',
-                            'success'
-                        );
-                    }
-                });
-            };
+const Card = React.forwardRef(({ className, ...props }, ref) => (
+  <div ref={ref} className={cn('rounded-xl border border-gray-200 bg-white text-gray-900 shadow-sm', className)} {...props} />
+));
+Card.displayName = "Card";
 
-            return (
-                <div className="min-h-screen flex flex-col">
-                    
-                    {/* NAVBAR */}
-                    <nav className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm border-b border-border w-full z-50 sticky top-0">
-                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                            <div className="flex justify-between h-16 md:h-20">
-                                <div className="flex items-center cursor-pointer" onClick={() => setCurrentPage('home')}>
-                                    <span className="text-2xl md:text-3xl font-black text-vfs-blue tracking-tight">Aliada Legal</span>
-                                </div>
-                                <div className="hidden md:flex items-center space-x-8">
-                                    <Button variant="ghost" onClick={() => setCurrentPage('nosotros')} className="font-semibold text-muted-foreground hover:text-foreground">Nosotros</Button>
-                                    <Button variant="ghost" onClick={() => setCurrentPage('servicios')} className="font-semibold text-muted-foreground hover:text-foreground">Servicios</Button>
-                                    <Button variant="default" onClick={() => setCurrentPage('contacto')} className="font-semibold bg-vfs-blue text-white hover:bg-vfs-dark">Contacto</Button>
-                                </div>
-                            </div>
-                        </div>
-                    </nav>
+const Badge = ({ tone = 'depende', children }) => (
+  <span className={cn('inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium', FLAG_META[tone].cls)}>{children}</span>
+);
 
-                    <AnimatePresence mode="wait">
-                        {currentPage === 'home' && (
-                            <motion.div
-                                key="home"
-                                initial={{ opacity: 0, y: 15 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -15 }}
-                                transition={{ duration: 0.3, ease: "easeOut" }}
-                            >
-                                {/* HERO SECTION */}
-                    <div className="relative text-white pt-24 pb-40 px-4 sm:px-6 lg:px-8 bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=2074&q=80')" }}>
-                        {/* Overlay */}
-                        <div className="absolute inset-0 bg-vfs-blue/80 mix-blend-multiply"></div>
-                        <div className="max-w-7xl mx-auto text-center relative z-10">
-                            <motion.div
-                                initial={{ opacity: 0, y: 30 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.8, ease: "easeOut" }}
-                            >
-                                <h1 className="text-4xl md:text-6xl font-semibold mb-6 tracking-tight drop-shadow-lg">
-                                    Tus documentos legales internacionales,<br/> sin complicaciones
-                                </h1>
-                                <p className="text-lg md:text-xl max-w-3xl mx-auto mb-12 text-blue-50 font-light drop-shadow-md">
-                                    ¿Te piden documentos originales para tu visa o residencia y no tienes quién los solicite en tu país? Trabajamos con expertos para obtenerlos, legalizarlos y enviarlos hasta tu puerta.
-                                </p>
+function Field({ id, label, hint, error, children }) {
+  return (
+    <div>
+      <label htmlFor={id} className="block mb-2 text-sm font-medium text-gray-900">{label}</label>
+      {hint && <p id={id + '-hint'} className="mb-2 text-xs text-gray-500">{hint}</p>}
+      <div>{children}</div>
+      {error && <p id={id + '-error'} role="alert" className="mt-2 text-sm text-red-600">{error}</p>}
+    </div>
+  );
+}
 
-                                {/* CONTENEDOR DE BÚSQUEDA */}
-                                <Card className="max-w-4xl mx-auto mt-8 shadow-2xl relative">
-                                    <CardContent className="p-8 flex flex-col md:flex-row gap-6 items-end text-left">
-                                        <div className="w-full space-y-2">
-                                            <Label className="uppercase tracking-wide text-xs text-muted-foreground">De dónde necesitas el documento</Label>
-                                            <Select>
-                                                <option>El Salvador</option>
-                                                <option>México</option>
-                                                <option>Guatemala</option>
-                                                <option>Honduras</option>
-                                                <option>Colombia</option>
-                                                <option>Ecuador</option>
-                                                <option>Perú</option>
-                                                <option>Argentina</option>
-                                            </Select>
-                                        </div>
-                                        <div className="w-full space-y-2">
-                                            <Label className="uppercase tracking-wide text-xs text-muted-foreground">Tipo de documento</Label>
-                                            <Select>
-                                                <option>Antecedentes Penales</option>
-                                                <option>Partida de Nacimiento</option>
-                                                <option>Poder Notarial</option>
-                                                <option>Certificado de Matrimonio</option>
-                                                <option>Actas de Nacimiento de Hijos</option>
-                                                <option>Certificado de Soltería</option>
-                                                <option>Sentencia / Certificado de Divorcio</option>
-                                                <option>Historial Académico Apostillado</option>
-                                                <option>Pasaporte (copia)</option>
-                                            </Select>
-                                        </div>
-                                        <Button 
-                                            size="lg"
-                                            onClick={() => Swal.fire('Solicitud iniciada', 'Nuestros expertos están listos para revisar tu caso.', 'success')} 
-                                            className="w-full md:w-auto bg-vfs-gold text-white hover:bg-vfs-gold-hover whitespace-nowrap shadow-md"
-                                        >
-                                            Comenzar Trámite
-                                        </Button>
-                                    </CardContent>
-                                </Card>
-                            </motion.div>
-                        </div>
+const inputCls = (invalid) => cn(
+  'bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary focus:border-primary block w-full px-3 py-2.5 shadow-sm placeholder-gray-400 focus:outline-none transition-colors disabled:cursor-not-allowed disabled:opacity-50',
+  invalid && 'border-red-500 ring-red-500 focus:ring-red-500 focus:border-red-500'
+);
+
+const Input = React.forwardRef(({ invalid, className, ...p }, ref) =>
+  <input ref={ref} className={cn(inputCls(invalid), className)} {...p} />);
+Input.displayName = "Input";
+
+const Select = React.forwardRef(({ invalid, className, children, ...p }, ref) => (
+  <div className="relative">
+    <select ref={ref} className={cn(inputCls(invalid), 'appearance-none pr-10', className)} {...p}>{children}</select>
+    <svg aria-hidden="true" className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M5.2 7.2a1 1 0 0 1 1.4 0L10 10.6l3.4-3.4a1 1 0 1 1 1.4 1.4l-4.1 4.1a1 1 0 0 1-1.4 0L5.2 8.6a1 1 0 0 1 0-1.4z" clipRule="evenodd"/></svg>
+  </div>
+));
+Select.displayName = "Select";
+
+const Textarea = React.forwardRef(({ className, invalid, ...p }, ref) => 
+  <textarea ref={ref} className={cn(inputCls(invalid), 'min-h-[110px] resize-y', className)} {...p} />
+);
+Textarea.displayName = "Textarea";
+
+// Campo de teléfono: inicializa y destruye intl-tel-input según se monta/desmonta
+function PhoneField({ id, value, onChange, invalid }) {
+  const ref = useRef(null);
+  const iti = useRef(null);
+  useEffect(() => {
+    if (!ref.current || !window.intlTelInput) return;
+    iti.current = window.intlTelInput(ref.current, {
+      initialCountry: 'sv',
+      onlyCountries: ['sv', 'mx', 'gt', 'hn', 'co', 'ec', 'pe', 'ar'],
+      separateDialCode: true,
+      utilsScript: 'https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.12/build/js/utils.js'
+    });
+    const el = ref.current;
+    const handler = () => onChange(iti.current && iti.current.getNumber ? (iti.current.getNumber() || el.value) : el.value);
+    el.addEventListener('countrychange', handler);
+    return () => { el.removeEventListener('countrychange', handler); if (iti.current) iti.current.destroy(); };
+  }, []);
+  return (
+    <input
+      ref={ref} id={id} type="tel" inputMode="tel" defaultValue={value}
+      onChange={(e) => onChange(iti.current && iti.current.getNumber ? (iti.current.getNumber() || e.target.value) : e.target.value)}
+      className={inputCls(invalid)}
+    />
+  );
+}
+
+
+/* =========================================================================
+   NAVEGACIÓN
+   ========================================================================= */
+
+const NAV = [
+  { id: 'home', label: 'Inicio' },
+  { id: 'servicios', label: 'Servicios' },
+  { id: 'nosotros', label: 'Nosotros' },
+  { id: 'contacto', label: 'Contacto' }
+];
+
+function Navbar({ page, setPage }) {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const esc = e => { if (e.key === 'Escape') setOpen(false); };
+    window.addEventListener('keydown', esc);
+    return () => window.removeEventListener('keydown', esc);
+  }, []);
+  const go = (id) => { setPage(id); setOpen(false); window.scrollTo({ top: 0, behavior: 'auto' }); };
+
+  return (
+    <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/90 backdrop-blur">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
+        <button onClick={() => go('home')} className={cn('flex items-baseline gap-2 rounded-md', focusRing)}>
+          <span className="font-display text-2xl font-semibold tracking-tight text-[#003B73]">Aliada Legal</span>
+          <span className="hidden text-xs text-gray-500 sm:inline">Trámites internacionales</span>
+        </button>
+
+        <nav aria-label="Principal" className="hidden items-center gap-1 md:flex">
+          {NAV.map(n => (
+            <button key={n.id} onClick={() => go(n.id)} aria-current={page === n.id ? 'page' : undefined}
+              className={cn('rounded-lg px-3 py-2 text-sm transition-colors', focusRing,
+                page === n.id ? 'font-semibold text-[#003B73] bg-blue-50' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50')}>
+              {n.label}
+            </button>
+          ))}
+          <Button size="sm" className="ml-2" onClick={() => { go('home'); setTimeout(() => irA('solicitud'), 60); }}>
+            Iniciar solicitud
+          </Button>
+        </nav>
+
+        <button className={cn('md:hidden rounded-lg p-2 text-gray-900', focusRing)} aria-expanded={open} aria-controls="menu-movil"
+          onClick={() => setOpen(o => !o)}>
+          <span className="sr-only">{open ? 'Cerrar menú' : 'Abrir menú'}</span>
+          <svg className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24" aria-hidden="true">
+            {open ? <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" /> : <path strokeLinecap="round" d="M4 7h16M4 17h16" />}
+          </svg>
+        </button>
+      </div>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div id="menu-movil" initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: .2 }} className="overflow-hidden border-t border-gray-200 bg-white md:hidden">
+            <div className="space-y-1 px-4 py-3">
+              {NAV.map(n => (
+                <button key={n.id} onClick={() => go(n.id)} aria-current={page === n.id ? 'page' : undefined}
+                  className={cn('block w-full rounded-lg px-3 py-3 text-left text-base', focusRing,
+                    page === n.id ? 'bg-blue-50 font-semibold text-[#003B73]' : 'text-gray-900 hover:bg-gray-50')}>
+                  {n.label}
+                </button>
+              ))}
+              <Button className="mt-2 w-full" onClick={() => { go('home'); setTimeout(() => irA('solicitud'), 60); }}>Iniciar solicitud</Button>
+              <Button variant="outline" className="w-full" onClick={() => { go('home'); setTimeout(() => irA('rastreo'), 60); }}>Rastrear mi trámite</Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </header>
+  );
+}
+
+/* =========================================================================
+   ASISTENTE DE SOLICITUD (3 pasos)
+   ========================================================================= */
+
+const PASOS = ['Qué necesitas', 'Cómo te contactamos', 'Listo'];
+
+function Asistente({ onNuevoTramite, onRastrear }) {
+  const [paso, setPaso] = useState(0);
+  const [f, setF] = useState({ pais: '', documento: '', nombre: '', email: '', telefono: '', contacto: 'whatsapp', mensaje: '' });
+  const [err, setErr] = useState({});
+  const [codigo, setCodigo] = useState(null);
+  const encabezado = useRef(null);
+
+  const set = (k, v) => { setF(p => ({ ...p, [k]: v })); setErr(e => ({ ...e, [k]: null })); };
+  // El foco viaja al encabezado del paso para que el lector de pantalla anuncie el cambio
+  useEffect(() => { if (paso > 0 && encabezado.current) encabezado.current.focus({ preventScroll: true }); }, [paso]);
+  const req = useMemo(() => resolverRequisitos(f.pais, f.documento), [f.pais, f.documento]);
+
+  const avanzar = () => {
+    const e = {};
+    if (!f.pais) e.pais = 'Elige el país donde se emitió el documento.';
+    if (!f.documento) e.documento = 'Elige qué documento necesitas.';
+    setErr(e);
+    if (Object.keys(e).length) return;
+    setPaso(1);
+  };
+
+  const enviar = () => {
+    const e = {};
+    if (f.nombre.trim().length < 3) e.nombre = 'Escribe tu nombre completo.';
+    if (!emailOk(f.email)) e.email = 'Revisa el correo: falta el @ o el dominio.';
+    if (f.telefono.replace(/\D/g, '').length < 7) e.telefono = 'Escribe un número donde podamos escribirte.';
+    setErr(e);
+    if (Object.keys(e).length) return;
+    const code = nuevoCodigo();
+    onNuevoTramite(code, {
+      cliente: f.nombre, pais: f.pais,
+      servicio: f.documento, etapa: 0,
+      actualizado: hoy(), fechaEstimada: fechaEstimada(),
+      nota: 'Un asesor revisará tu caso y te escribirá por ' + (f.contacto === 'whatsapp' ? 'WhatsApp' : 'correo') + ' en menos de 24 horas.'
+    });
+    setCodigo(code);
+    setPaso(2);
+  };
+
+  return (
+    <Card id="solicitud" className="scroll-mt-24 overflow-hidden shadow-[0_18px_50px_-24px_rgba(0,38,74,.45)]">
+      {/* Indicador de progreso */}
+      <div className="flex items-center gap-2 border-b border-gray-200 bg-gray-50 px-5 py-3 sm:px-7">
+        {PASOS.map((p, i) => (
+          <React.Fragment key={p}>
+            <div className="flex items-center gap-2">
+              <span className={cn('flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold',
+                i < paso ? 'bg-[#003B73] text-white' : i === paso ? 'bg-[#F2A900] text-[#002a52]' : 'bg-white text-gray-500 border border-gray-200')}>
+                {i < paso ? '✓' : i + 1}
+              </span>
+              <span className={cn('text-xs sm:text-sm', i === paso ? 'font-semibold text-gray-900' : 'text-gray-500', i !== paso && 'hidden sm:inline')}>{p}</span>
+            </div>
+            {i < PASOS.length - 1 && <span className="h-px flex-1 bg-line" aria-hidden="true" />}
+          </React.Fragment>
+        ))}
+      </div>
+
+      <div className="p-5 sm:p-7">
+        <AnimatePresence mode="wait">
+          {paso === 0 && (
+            <motion.div key="p0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .18 }}>
+              <h2 ref={encabezado} tabIndex={-1} className="font-display text-xl text-gray-900 sm:text-2xl">Empecemos por el documento</h2>
+              <p className="mt-1 max-w-measure text-sm text-gray-500">Dinos qué necesitas y te mostramos, antes de pedirte nada más, qué hace falta para conseguirlo.</p>
+
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                <Field id="w-pais" label="País que emite el documento" error={err.pais}>
+                  <Select id="w-pais" value={f.pais} invalid={!!err.pais} onChange={e => set('pais', e.target.value)}>
+                    <option value="">Elige un país</option>
+                    {PAISES.map(p => <option key={p}>{p}</option>)}
+                  </Select>
+                </Field>
+                <Field id="w-doc" label="Documento que necesitas" error={err.documento}>
+                  <Select id="w-doc" value={f.documento} invalid={!!err.documento} onChange={e => set('documento', e.target.value)}>
+                    <option value="">Elige un documento</option>
+                    {DOCUMENTOS.map(d => <option key={d}>{d}</option>)}
+                  </Select>
+                </Field>
+              </div>
+
+              <AnimatePresence>
+                {req && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: .22 }} className="overflow-hidden">
+                    <div className="mt-5 rounded-lg border border-[#003B73]/15 bg-blue-50 p-4" aria-live="polite">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge tone={poderFlag(req.poder)}>{FLAG_META[poderFlag(req.poder)].label}</Badge>
+                        <span className="text-xs text-[#003B73]/70">{f.documento} · {f.pais}</span>
+                      </div>
+                      <dl className="mt-3 space-y-2 text-sm">
+                        <div><dt className="font-medium text-gray-900">Cómo se tramita</dt><dd className="text-gray-500">{req.tramite}</dd></div>
+                        <div><dt className="font-medium text-gray-900">Lo que tendrás que darnos</dt><dd className="text-gray-500">{req.requisitos}</dd></div>
+                      </dl>
                     </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-                    {/* TRACKING SECTION */}
-                    <div className="max-w-4xl mx-auto px-4 w-full mt-12 mb-16 relative z-20">
-                        <Card className="shadow-lg border-t-4 border-t-vfs-blue">
-                            <CardContent className="p-8 md:p-10 flex flex-col md:flex-row items-center justify-between">
-                                <div className="mb-6 md:mb-0 md:mr-8 text-center md:text-left">
-                                    <h3 className="text-2xl font-semibold text-vfs-blue mb-2 tracking-tight">¿Ya aplicaste? Rastrear trámite</h3>
-                                    <p className="text-muted-foreground text-sm md:text-base">Ingresa tu número de referencia para ver el estado de tu solicitud al instante.</p>
-                                </div>
-                                <form onSubmit={handleTracking} className="flex w-full md:w-auto gap-3">
-                                    <Input
-                                        type="text"
-                                        placeholder="Ej. TRK-001"
-                                        value={trackingId}
-                                        onChange={(e) => setTrackingId(e.target.value)}
-                                        className="w-full md:w-64 uppercase"
-                                        required
-                                    />
-                                    <Button type="submit" size="lg" className="bg-vfs-blue text-white hover:bg-vfs-dark whitespace-nowrap">
-                                        Rastrear
-                                    </Button>
-                                </form>
-                            </CardContent>
-                        </Card>
-                    </div>
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+                <Button variant="accent" size="lg" onClick={avanzar} className="sm:w-auto">Continuar</Button>
+                <p className="text-xs text-gray-500">2 pasos más. Toma menos de un minuto y no compromete a nada.</p>
+              </div>
+            </motion.div>
+          )}
 
-                    {/* SECCIÓN DE SERVICIOS / CLIENTES */}
-                    <div className="py-20 px-4 max-w-7xl mx-auto w-full bg-background">
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            whileInView={{ opacity: 1 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.6 }}
-                        >
-                            <div className="text-center mb-16">
-                                <h2 className="text-3xl md:text-4xl font-semibold text-vfs-blue mb-4 tracking-tight">Soluciones a tu medida</h2>
-                                <p className="text-muted-foreground max-w-2xl mx-auto mb-6">Ofrecemos servicios integrales tanto para personas naturales como para firmas que buscan un aliado estratégico.</p>
-                                <div className="w-24 h-1 bg-vfs-gold mx-auto"></div>
-                            </div>
-                            <div className="max-w-4xl mx-auto mt-10">
-                                {/* Tab Triggers */}
-                                <div className="flex p-1 bg-secondary rounded-lg mb-8 mx-auto w-fit shadow-inner flex-wrap justify-center gap-1">
-                                    <button 
-                                        onClick={() => setActiveTab('informacion')}
-                                        className={cn(
-                                            "px-8 py-3 rounded-md text-sm font-semibold transition-all duration-200 whitespace-nowrap", 
-                                            activeTab === 'informacion' ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                                        )}
-                                    >
-                                        Información por País
-                                    </button>
-                                    <button 
-                                        onClick={() => setActiveTab('individuales')}
-                                        className={cn(
-                                            "px-8 py-3 rounded-md text-sm font-semibold transition-all duration-200 whitespace-nowrap", 
-                                            activeTab === 'individuales' ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                                        )}
-                                    >
-                                        Clientes Individuales
-                                    </button>
-                                    <button 
-                                        onClick={() => setActiveTab('bufetes')}
-                                        className={cn(
-                                            "px-8 py-3 rounded-md text-sm font-semibold transition-all duration-200 whitespace-nowrap", 
-                                            activeTab === 'bufetes' ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                                        )}
-                                    >
-                                        Bufetes de Abogados
-                                    </button>
-                                </div>
+          {paso === 1 && (
+            <motion.div key="p1" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .18 }}>
+              <h2 ref={encabezado} tabIndex={-1} className="font-display text-xl text-gray-900 sm:text-2xl">¿Cómo te contactamos?</h2>
+              <p className="mt-1 text-sm text-gray-500">
+                {f.documento} de {f.pais}. <button onClick={() => setPaso(0)} className={cn('text-[#003B73] underline underline-offset-4 rounded', focusRing)}>Cambiar</button>
+              </p>
 
-                                {/* Tab Content */}
-                                <div className="relative overflow-hidden">
-                                    {activeTab === 'informacion' && (
-                                        <motion.div 
-                                            initial={{ opacity: 0, x: -20 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            exit={{ opacity: 0, x: 20 }}
-                                            transition={{ duration: 0.3 }}
-                                        >
-                                            <Card className="overflow-hidden shadow-xl border-t-0 p-8">
-                                                <h3 className="text-2xl font-semibold text-foreground mb-4">Requisitos por País</h3>
-                                                <p className="text-muted-foreground mb-6">Selecciona un país para ver la información específica sobre cómo tramitar sus documentos legales (solo países verificados).</p>
-                                                
-                                                <div className="mb-8">
-                                                    <Label className="uppercase tracking-wide text-xs text-muted-foreground mb-2 block">País</Label>
-                                                    <Select 
-                                                        value={selectedCountry} 
-                                                        onChange={(e) => setSelectedCountry(e.target.value)}
-                                                        className="max-w-md"
-                                                    >
-                                                        {Object.keys(countryData).map(country => (
-                                                            <option key={country} value={country}>{country}</option>
-                                                        ))}
-                                                    </Select>
-                                                </div>
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                <Field id="w-nombre" label="Nombre completo" error={err.nombre}>
+                  <Input id="w-nombre" value={f.nombre} invalid={!!err.nombre} autoComplete="name"
+                    placeholder="Como aparece en tu identificación" onChange={e => set('nombre', e.target.value)} />
+                </Field>
+                <Field id="w-email" label="Correo electrónico" error={err.email}>
+                  <Input id="w-email" type="email" value={f.email} invalid={!!err.email} autoComplete="email"
+                    placeholder="tucorreo@ejemplo.com" onChange={e => set('email', e.target.value)} />
+                </Field>
+                <Field id="w-tel" label="Teléfono" hint="Incluye el código del país donde vives." error={err.telefono}>
+                  <PhoneField id="w-tel" value={f.telefono} invalid={!!err.telefono} onChange={v => set('telefono', v)} />
+                </Field>
+                <fieldset>
+                  <legend className="text-sm font-medium text-gray-900">Prefieres que te escribamos por</legend>
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    {[['whatsapp', 'WhatsApp'], ['email', 'Correo']].map(([v, l]) => (
+                      <label key={v} className={cn('flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2.5 text-sm transition-colors',
+                        f.contacto === v ? 'border-[#003B73] bg-blue-50 font-medium text-[#003B73]' : 'border-gray-200 hover:border-[#003B73]/30')}>
+                        <input type="radio" id={`contacto-${v}`} name="contacto" value={v} checked={f.contacto === v}
+                          onChange={() => set('contacto', v)} className="h-4 w-4 accent-[#003B73]" />
+                        {l}
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+              </div>
 
-                                                {selectedCountry && countryData[selectedCountry] && (
-                                                    <div className="space-y-8">
-                                                        <div>
-                                                            <h4 className="text-xl font-bold text-vfs-blue mb-4">1. Antecedentes Penales</h4>
-                                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                                <div className="bg-secondary p-4 rounded-lg">
-                                                                    <h5 className="font-semibold mb-2">Cómo se tramita</h5>
-                                                                    <p className="text-sm text-muted-foreground">{countryData[selectedCountry].antecedentes.tramite}</p>
-                                                                </div>
-                                                                <div className="bg-secondary p-4 rounded-lg">
-                                                                    <h5 className="font-semibold mb-2">¿Necesita poder notarial?</h5>
-                                                                    <p className="text-sm text-muted-foreground">{countryData[selectedCountry].antecedentes.poder}</p>
-                                                                </div>
-                                                                <div className="bg-secondary p-4 rounded-lg">
-                                                                    <h5 className="font-semibold mb-2">Qué debe presentar el cliente</h5>
-                                                                    <p className="text-sm text-muted-foreground">{countryData[selectedCountry].antecedentes.requisitos}</p>
-                                                                </div>
-                                                            </div>
-                                                        </div>
+              <div className="mt-4">
+                <Field id="w-msg" label="Algo que debamos saber" hint="Opcional: fechas límite, nombres exactos, si ya intentaste el trámite.">
+                  <Textarea id="w-msg" value={f.mensaje} onChange={e => set('mensaje', e.target.value)} placeholder="Ej. Necesito el documento antes del 10 de octubre para una cita consular." />
+                </Field>
+              </div>
 
-                                                        <div>
-                                                            <h4 className="text-xl font-bold text-vfs-blue mb-4">2. Partida de Nacimiento</h4>
-                                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                                <div className="bg-secondary p-4 rounded-lg">
-                                                                    <h5 className="font-semibold mb-2">Institución</h5>
-                                                                    <p className="text-sm text-muted-foreground">{countryData[selectedCountry].nacimiento.institucion}</p>
-                                                                </div>
-                                                                <div className="bg-secondary p-4 rounded-lg">
-                                                                    <h5 className="font-semibold mb-2">¿Necesita poder notarial?</h5>
-                                                                    <p className="text-sm text-muted-foreground">{countryData[selectedCountry].nacimiento.poder}</p>
-                                                                </div>
-                                                                <div className="bg-secondary p-4 rounded-lg">
-                                                                    <h5 className="font-semibold mb-2">Qué debe presentar el cliente</h5>
-                                                                    <p className="text-sm text-muted-foreground">{countryData[selectedCountry].nacimiento.requisitos}</p>
-                                                                </div>
-                                                            </div>
-                                                        </div>
+              <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:items-center">
+                <Button variant="outline" onClick={() => setPaso(0)}>Volver</Button>
+                <Button variant="accent" size="lg" onClick={enviar}>Enviar solicitud</Button>
+                <p className="text-xs text-gray-500 sm:ml-2">Usamos tus datos solo para gestionar el trámite.</p>
+              </div>
+            </motion.div>
+          )}
 
-                                                        <div>
-                                                            <h4 className="text-xl font-bold text-vfs-blue mb-4">3. Poder Notarial</h4>
-                                                            <div className="bg-secondary p-4 rounded-lg mb-4">
-                                                                <h5 className="font-semibold mb-2">Dónde se otorga / radica el poder</h5>
-                                                                <p className="text-sm text-muted-foreground">{countryData[selectedCountry].poderNotarial.donde}</p>
-                                                            </div>
-                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                                <div className="bg-secondary p-4 rounded-lg">
-                                                                    <h5 className="font-semibold mb-2">Qué permite hacer con un poder notarial</h5>
-                                                                    <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
-                                                                        <li>Venta o compra de inmuebles</li>
-                                                                        <li>Gestión de herencias y sucesiones</li>
-                                                                        <li>Trámites bancarios limitados (según el banco)</li>
-                                                                        <li>Pago de impuestos o servicios sobre bienes</li>
-                                                                        <li>Traspaso o trámites de vehículos</li>
-                                                                        <li>Representación en trámites civiles no litigiosos</li>
-                                                                        <li>Cobro de pensiones o prestaciones</li>
-                                                                        <li>Administración o alquiler de propiedades</li>
-                                                                    </ul>
-                                                                </div>
-                                                                <div className="bg-secondary p-4 rounded-lg">
-                                                                    <h5 className="font-semibold mb-2">Qué debe presentar el cliente ante el notario</h5>
-                                                                    <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
-                                                                        <li>Identificación vigente (cédula, DNI o pasaporte)</li>
-                                                                        <li>Nombre completo de la persona o agencia que recibirá el poder (apoderado)</li>
-                                                                        <li>Descripción clara y específica de los actos que autoriza</li>
-                                                                        <li>Si es para inmueble: dirección, número de matrícula/escritura del bien</li>
-                                                                        <li>Fotografía y/o huella dactilar si el país lo exige (ej. Colombia)</li>
-                                                                        <li>Debe otorgarse ante notario o cónsul de su país de origen en el país donde vive</li>
-                                                                        <li>Apostilla o legalización si el poder se usará en un país distinto de donde se firmó</li>
-                                                                    </ul>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                <div className="mt-12">
-                                                    <h4 className="text-xl font-bold text-vfs-blue mb-4">4. Resto de documentos</h4>
-                                                    <p className="text-sm text-muted-foreground mb-4">El mecanismo es similar para los demás documentos.</p>
-                                                    <div className="overflow-x-auto">
-                                                        <table className="w-full text-left text-sm border-collapse">
-                                                            <thead>
-                                                                <tr className="bg-vfs-blue text-white">
-                                                                    <th className="p-3 border border-vfs-dark rounded-tl-lg font-semibold">Documento</th>
-                                                                    <th className="p-3 border border-vfs-dark font-semibold">Dónde se tramita</th>
-                                                                    <th className="p-3 border border-vfs-dark font-semibold">¿Necesita poder notarial?</th>
-                                                                    <th className="p-3 border border-vfs-dark rounded-tr-lg font-semibold">Qué debe presentar el cliente</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                {generalDocumentsData.map((doc, idx) => (
-                                                                    <tr key={idx} className="border-b border-border hover:bg-secondary/50 transition-colors">
-                                                                        <td className="p-3 border-r border-border font-medium text-foreground">{doc.documento}</td>
-                                                                        <td className="p-3 border-r border-border text-muted-foreground">{doc.tramite}</td>
-                                                                        <td className="p-3 border-r border-border text-muted-foreground">{doc.poder}</td>
-                                                                        <td className="p-3 text-muted-foreground">{doc.requisitos}</td>
-                                                                    </tr>
-                                                                ))}
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
-                                                </div>
-                                            </Card>
-                                        </motion.div>
-                                    )}
-                                    {activeTab === 'individuales' && (
-                                        <motion.div 
-                                            initial={{ opacity: 0, x: -20 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            exit={{ opacity: 0, x: 20 }}
-                                            transition={{ duration: 0.3 }}
-                                        >
-                                            <Card className="overflow-hidden flex flex-col md:flex-row shadow-xl border-t-0">
-                                                <div className="md:w-2/5 h-64 md:h-auto bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1573164574572-cb89e39749b4?auto=format&fit=crop&w=800&q=80')" }}></div>
-                                                <div className="md:w-3/5 flex flex-col justify-center p-8 md:p-12">
-                                                    <h3 className="text-3xl font-semibold text-foreground mb-4 tracking-tight">Soluciones para ti</h3>
-                                                    <p className="text-muted-foreground leading-relaxed text-lg mb-8">
-                                                        Asesoramos y gestionamos los trámites de personas que se encuentran en el exterior y requieren enviar documentación clave, apostillada y traducida, de manera urgente y sin complicaciones.
-                                                    </p>
-                                                    <Button className="w-fit" size="lg">Iniciar mi trámite <span className="ml-2">→</span></Button>
-                                                </div>
-                                            </Card>
-                                        </motion.div>
-                                    )}
-
-                                    {activeTab === 'bufetes' && (
-                                        <motion.div 
-                                            initial={{ opacity: 0, x: 20 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            exit={{ opacity: 0, x: -20 }}
-                                            transition={{ duration: 0.3 }}
-                                        >
-                                            <Card className="overflow-hidden flex flex-col md:flex-row shadow-xl border-t-0">
-                                                <div className="md:w-2/5 h-64 md:h-auto bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1556761175-5973dc0f32d7?auto=format&fit=crop&w=800&q=80')" }}></div>
-                                                <div className="md:w-3/5 flex flex-col justify-center p-8 md:p-12">
-                                                    <h3 className="text-3xl font-semibold text-foreground mb-4 tracking-tight">Aliados Estratégicos</h3>
-                                                    <p className="text-muted-foreground leading-relaxed text-lg mb-8">
-                                                        Funcionamos como el brazo operativo de firmas legales en EE.UU. o la región que necesitan aliados confiables para solicitar y procesar documentos con los más altos estándares.
-                                                    </p>
-                                                    <Button className="w-fit" size="lg">Contactar equipo <span className="ml-2">→</span></Button>
-                                                </div>
-                                            </Card>
-                                        </motion.div>
-                                    )}
-                                </div>
-                            </div>
-                        </motion.div>
-                    </div>
-
-
-
-                    {/* TESTIMONIOS */}
-                    <div className="py-24 bg-vfs-blue text-white w-full relative overflow-hidden">
-                        {/* Decorative background pattern */}
-                        <div className="absolute top-0 left-0 w-full h-full opacity-10" style={{ backgroundImage: "radial-gradient(#ffffff 1px, transparent 1px)", backgroundSize: "30px 30px" }}></div>
-                        <div className="max-w-7xl mx-auto px-4 relative z-10">
-                            <div className="text-center mb-16">
-                                <h2 className="text-3xl md:text-4xl font-semibold mb-4 tracking-tight">Experiencias Satisfactorias</h2>
-                                <div className="w-24 h-1 bg-vfs-gold mx-auto"></div>
-                            </div>
-                            <div className="grid md:grid-cols-4 gap-6">
-                                {[
-                                    { review: "Rápido y confiable. Me ayudaron a tramitar mis documentos seguro.", autor: "Juan Pérez", pais: "El Salvador" },
-                                    { review: "Excelente trabajo con el papeleo legal. Me ahorraron mucho tiempo.", autor: "Maria Lopez", pais: "Guatemala" },
-                                    { review: "Trato personalizado y amable. Muy feliz con el resultado.", autor: "Carlos Ramírez", pais: "Honduras" },
-                                    { review: "Eficiencia y profesionalismo excepcionales. 100% recomendados.", autor: "Camila Gómez", pais: "México" },
-                                ].map((testimonio, index) => (
-                                    <div 
-                                        key={index}
-                                        className="bg-white/10 backdrop-blur-md p-8 rounded-xl border border-white/20 shadow-xl relative flex flex-col h-full text-center"
-                                    >
-                                        <p className="mb-8 text-gray-100 relative z-10 text-sm leading-relaxed flex-grow">{testimonio.review}</p>
-                                        <div className="mt-auto">
-                                            <p className="font-semibold text-white text-base tracking-wide">{testimonio.autor}</p>
-                                            <p className="text-vfs-gold text-xs uppercase font-medium tracking-wider">{testimonio.pais}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* FAQ ACCORDION SECTION */}
-                    <div className="py-24 bg-gray-50/50 w-full border-t border-border">
-                        <div className="max-w-3xl mx-auto px-4">
-                            <div className="text-center mb-12">
-                                <h2 className="text-3xl font-bold tracking-tight mb-4 text-foreground">Preguntas Frecuentes</h2>
-                                <p className="text-muted-foreground">Todo lo que necesitas saber sobre nuestros trámites internacionales.</p>
-                            </div>
-                            <div className="space-y-4">
-                                {[
-                                    { q: "¿Cuánto tiempo tarda un trámite típico?", a: "Depende del documento y país, pero en promedio nuestros trámites (incluyendo apostilla) toman entre 7 y 15 días hábiles antes de ser enviados por mensajería internacional." },
-                                    { q: "¿Qué métodos de pago aceptan?", a: "Aceptamos pagos tradicionales, transferencias y UglyCash para liquidaciones rápidas sin importar tu ubicación geográfica ni moneda local." },
-                                    { q: "¿Los documentos son originales y válidos?", a: "Sí, todos los documentos son tramitados directamente en las instituciones gubernamentales correspondientes y son apostillados para tener plena validez internacional." }
-                                ].map((faq, idx) => (
-                                    <div key={idx} className="border border-border rounded-lg bg-background overflow-hidden transition-all duration-200">
-                                        <button 
-                                            onClick={() => toggleAccordion(idx)}
-                                            className="w-full px-6 py-4 text-left flex justify-between items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                                        >
-                                            <span className="font-semibold text-foreground">{faq.q}</span>
-                                            <span className="text-muted-foreground transition-transform duration-300" style={{ transform: openAccordion === idx ? 'rotate(180deg)' : 'rotate(0deg)' }}>
-                                                ↓
-                                            </span>
-                                        </button>
-                                        <motion.div 
-                                            initial={false}
-                                            animate={{ height: openAccordion === idx ? 'auto' : 0, opacity: openAccordion === idx ? 1 : 0 }}
-                                            className="overflow-hidden"
-                                        >
-                                            <div className="px-6 pb-4 text-muted-foreground leading-relaxed">
-                                                {faq.a}
-                                            </div>
-                                        </motion.div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* UGLYCASH PAYMENT */}
-                    <div className="py-24 bg-background w-full border-t border-border">
-                        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center gap-12">
-                            <div className="md:w-1/2 text-center md:text-left">
-                                <h2 className="text-3xl md:text-4xl font-semibold tracking-tight text-foreground mb-6">Paga de forma fácil e internacional</h2>
-                                <p className="text-muted-foreground mb-10 text-lg leading-relaxed">
-                                    Integramos tecnologías modernas para que puedas liquidar tus servicios legales sin preocuparte por el tipo de moneda, comisiones ocultas o fronteras. Todo desde tu celular.
-                                </p>
-                                
-                                <Button 
-                                    size="lg"
-                                    onClick={handleUglyCashPayment}
-                                    className="bg-[#111111] text-white hover:bg-black shadow-xl hover:shadow-2xl h-14 px-10 text-base"
-                                >
-                                    <svg className="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    Pagar con UglyCash
-                                </Button>
-                            </div>
-                            <div className="md:w-1/2">
-                                <img 
-                                    src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=800&q=80" 
-                                    alt="Pagos Internacionales" 
-                                    className="rounded-2xl shadow-2xl border border-border"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                            </motion.div>
-                        )}
-
-                        {currentPage === 'nosotros' && (
-                            <motion.div
-                                key="nosotros"
-                                initial={{ opacity: 0, y: 15 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -15 }}
-                                transition={{ duration: 0.3, ease: "easeOut" }}
-                                className="flex-1 py-20 px-4 max-w-7xl mx-auto w-full"
-                            >
-                                <div className="text-center mb-16">
-                                    <h1 className="text-4xl md:text-5xl font-bold text-vfs-blue mb-6 tracking-tight">Sobre Nosotros</h1>
-                                    <p className="text-lg text-muted-foreground max-w-3xl mx-auto">En Aliada Legal somos especialistas en conectar a clientes que se encuentran fuera de su país de origen con los trámites legales que necesitan. Entendemos la complejidad y la frustración de gestionar documentos internacionales a distancia.</p>
-                                    <p className="text-lg text-muted-foreground max-w-3xl mx-auto mt-4">Nuestro equipo cuenta con años de experiencia coordinando con notarías, registros civiles y ministerios en Latinoamérica, asegurando que tus documentos lleguen de manera segura, apostillados y listos para ser utilizados en tus procesos de inmigración o negocios.</p>
-                                    <div className="w-24 h-1 bg-vfs-gold mx-auto mt-8"></div>
-                                </div>
-                                
-                                <div className="grid md:grid-cols-3 gap-8 mt-12">
-                                    <motion.div whileHover={{ y: -5 }} transition={{ type: "spring", stiffness: 300 }}>
-                                        <Card className="p-8 h-full shadow-lg border-t-4 border-t-vfs-blue bg-white/50 backdrop-blur-sm">
-                                            <div className="bg-vfs-blue/10 w-12 h-12 rounded-full flex items-center justify-center mb-6">
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-vfs-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                                </svg>
-                                            </div>
-                                            <h3 className="font-semibold text-xl mb-3 text-vfs-blue">Nuestra Misión</h3>
-                                            <p className="text-muted-foreground leading-relaxed">Simplificar la burocracia transfronteriza y dar paz mental a nuestros clientes a través de un servicio transparente y eficiente.</p>
-                                        </Card>
-                                    </motion.div>
-                                    <motion.div whileHover={{ y: -5 }} transition={{ type: "spring", stiffness: 300 }}>
-                                        <Card className="p-8 h-full shadow-lg border-t-4 border-t-vfs-gold bg-white/50 backdrop-blur-sm">
-                                            <div className="bg-vfs-gold/10 w-12 h-12 rounded-full flex items-center justify-center mb-6">
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-vfs-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                </svg>
-                                            </div>
-                                            <h3 className="font-semibold text-xl mb-3 text-vfs-blue">Visión</h3>
-                                            <p className="text-muted-foreground leading-relaxed">Ser la plataforma líder en servicios legales internacionales para la diáspora latinoamericana y despachos de abogados a nivel global.</p>
-                                        </Card>
-                                    </motion.div>
-                                    <motion.div whileHover={{ y: -5 }} transition={{ type: "spring", stiffness: 300 }}>
-                                        <Card className="p-8 h-full shadow-lg border-t-4 border-t-vfs-dark bg-white/50 backdrop-blur-sm">
-                                            <div className="bg-vfs-dark/10 w-12 h-12 rounded-full flex items-center justify-center mb-6">
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-vfs-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                                                </svg>
-                                            </div>
-                                            <h3 className="font-semibold text-xl mb-3 text-vfs-blue">Valores</h3>
-                                            <p className="text-muted-foreground leading-relaxed">Transparencia, rapidez, confidencialidad y empatía con las necesidades de cada cliente que confía en nosotros.</p>
-                                        </Card>
-                                    </motion.div>
-                                </div>
-                            </motion.div>
-                        )}
-
-                    {currentPage === 'servicios' && (
-                            <motion.div
-                                key="servicios"
-                                initial={{ opacity: 0, y: 15 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -15 }}
-                                transition={{ duration: 0.3, ease: "easeOut" }}
-                                className="flex-1 py-20 px-4 max-w-7xl mx-auto w-full"
-                            >
-                                <div className="text-center mb-16">
-                                    <h1 className="text-4xl md:text-5xl font-bold text-vfs-blue mb-6 tracking-tight">Nuestros Servicios</h1>
-                                    <p className="text-lg text-muted-foreground max-w-2xl mx-auto">Ofrecemos un catálogo completo de gestiones legales en tu país de origen, entregando resultados directamente en tus manos, sin importar dónde residas actualmente.</p>
-                                    <div className="w-24 h-1 bg-vfs-gold mx-auto mt-8"></div>
-                                </div>
-                                
-                                <div className="grid md:grid-cols-2 gap-8">
-                                    <motion.div whileHover={{ scale: 1.02 }} transition={{ type: "spring", stiffness: 300 }}>
-                                        <Card className="p-8 h-full shadow-lg border-l-4 border-l-vfs-blue">
-                                            <div className="flex items-start mb-4">
-                                                <div className="bg-vfs-blue/10 p-3 rounded-lg mr-4">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-vfs-blue" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                                                    </svg>
-                                                </div>
-                                                <h3 className="text-2xl font-bold text-vfs-blue mt-1">Antecedentes Penales</h3>
-                                            </div>
-                                            <p className="text-muted-foreground mb-6">Gestionamos tus certificados de antecedentes penales o policiales necesarios para procesos de residencia, visados o empleo.</p>
-                                            <ul className="space-y-3">
-                                                <li className="flex items-center text-sm text-foreground"><span className="w-1.5 h-1.5 bg-vfs-gold rounded-full mr-2"></span>Gestión presencial o en línea</li>
-                                                <li className="flex items-center text-sm text-foreground"><span className="w-1.5 h-1.5 bg-vfs-gold rounded-full mr-2"></span>Apostilla de La Haya</li>
-                                                <li className="flex items-center text-sm text-foreground"><span className="w-1.5 h-1.5 bg-vfs-gold rounded-full mr-2"></span>Traducción certificada</li>
-                                            </ul>
-                                        </Card>
-                                    </motion.div>
-                                    
-                                    <motion.div whileHover={{ scale: 1.02 }} transition={{ type: "spring", stiffness: 300 }}>
-                                        <Card className="p-8 h-full shadow-lg border-l-4 border-l-vfs-gold">
-                                            <div className="flex items-start mb-4">
-                                                <div className="bg-vfs-gold/10 p-3 rounded-lg mr-4">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-vfs-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
-                                                    </svg>
-                                                </div>
-                                                <h3 className="text-2xl font-bold text-vfs-blue mt-1">Partidas de Nacimiento</h3>
-                                            </div>
-                                            <p className="text-muted-foreground mb-6">Obtención de copias certificadas de actas de nacimiento emitidas por el Registro Civil correspondiente.</p>
-                                            <ul className="space-y-3">
-                                                <li className="flex items-center text-sm text-foreground"><span className="w-1.5 h-1.5 bg-vfs-blue rounded-full mr-2"></span>Búsqueda en archivos nacionales</li>
-                                                <li className="flex items-center text-sm text-foreground"><span className="w-1.5 h-1.5 bg-vfs-blue rounded-full mr-2"></span>Apostilla de La Haya</li>
-                                                <li className="flex items-center text-sm text-foreground"><span className="w-1.5 h-1.5 bg-vfs-blue rounded-full mr-2"></span>Traducción certificada</li>
-                                            </ul>
-                                        </Card>
-                                    </motion.div>
-
-                                    <motion.div whileHover={{ scale: 1.02 }} transition={{ type: "spring", stiffness: 300 }}>
-                                        <Card className="p-8 h-full shadow-lg border-l-4 border-l-vfs-dark">
-                                            <div className="flex items-start mb-4">
-                                                <div className="bg-vfs-dark/10 p-3 rounded-lg mr-4">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-vfs-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                                    </svg>
-                                                </div>
-                                                <h3 className="text-2xl font-bold text-vfs-blue mt-1">Poderes Notariales</h3>
-                                            </div>
-                                            <p className="text-muted-foreground mb-6">Redacción, revisión y legalización de poderes notariales (generales o especiales) para que un tercero te represente.</p>
-                                            <ul className="space-y-3">
-                                                <li className="flex items-center text-sm text-foreground"><span className="w-1.5 h-1.5 bg-vfs-gold rounded-full mr-2"></span>Poderes para venta de inmuebles</li>
-                                                <li className="flex items-center text-sm text-foreground"><span className="w-1.5 h-1.5 bg-vfs-gold rounded-full mr-2"></span>Gestión de herencias</li>
-                                                <li className="flex items-center text-sm text-foreground"><span className="w-1.5 h-1.5 bg-vfs-gold rounded-full mr-2"></span>Trámites bancarios</li>
-                                            </ul>
-                                        </Card>
-                                    </motion.div>
-
-                                    <motion.div whileHover={{ scale: 1.02 }} transition={{ type: "spring", stiffness: 300 }}>
-                                        <Card className="p-8 h-full shadow-lg border-l-4 border-l-gray-400">
-                                            <div className="flex items-start mb-4">
-                                                <div className="bg-gray-100 p-3 rounded-lg mr-4">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2" />
-                                                    </svg>
-                                                </div>
-                                                <h3 className="text-2xl font-bold text-vfs-blue mt-1">Otros Certificados</h3>
-                                            </div>
-                                            <p className="text-muted-foreground mb-6">Manejamos una amplia variedad de documentos adicionales requeridos en el extranjero.</p>
-                                            <ul className="space-y-3">
-                                                <li className="flex items-center text-sm text-foreground"><span className="w-1.5 h-1.5 bg-gray-400 rounded-full mr-2"></span>Certificados de Matrimonio / Soltería</li>
-                                                <li className="flex items-center text-sm text-foreground"><span className="w-1.5 h-1.5 bg-gray-400 rounded-full mr-2"></span>Sentencias de Divorcio</li>
-                                                <li className="flex items-center text-sm text-foreground"><span className="w-1.5 h-1.5 bg-gray-400 rounded-full mr-2"></span>Historial Académico Apostillado</li>
-                                            </ul>
-                                        </Card>
-                                    </motion.div>
-                                </div>
-                            </motion.div>
-                        )}
-
-                    {currentPage === 'contacto' && (
-                            <motion.div
-                                key="contacto"
-                                initial={{ opacity: 0, y: 15 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -15 }}
-                                transition={{ duration: 0.3, ease: "easeOut" }}
-                                className="flex-1 py-20 px-4 max-w-3xl mx-auto w-full"
-                            >
-                                <div className="text-center mb-12">
-                                    <h1 className="text-4xl md:text-5xl font-bold text-vfs-blue mb-6 tracking-tight">Contacto</h1>
-                                    <p className="text-lg text-muted-foreground">¿Tienes alguna duda o necesitas un servicio que no encuentras en la lista? Escríbenos y nuestro equipo te asesorará en breve.</p>
-                                    <div className="w-24 h-1 bg-vfs-gold mx-auto mt-8"></div>
-                                </div>
-                                
-                                <Card className="p-8 shadow-2xl border-t-4 border-t-vfs-blue">
-                                    <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); Swal.fire('Mensaje Enviado', 'Nos pondremos en contacto contigo pronto.', 'success'); }}>
-                                        <div className="grid md:grid-cols-2 gap-6">
-                                            <div className="space-y-2">
-                                                <Label htmlFor="name" className="text-muted-foreground font-semibold">Nombre Completo</Label>
-                                                <Input id="name" placeholder="Ej. Juan Pérez" required className="bg-secondary/50 focus:bg-white transition-colors" />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="email" className="text-muted-foreground font-semibold">Correo Electrónico</Label>
-                                                <Input id="email" type="email" placeholder="ejemplo@correo.com" required className="bg-secondary/50 focus:bg-white transition-colors" />
-                                            </div>
-                                        </div>
-                                      
-                                        <div className="space-y-2">
-                                            <Label htmlFor="subject" className="text-muted-foreground font-semibold">Asunto</Label>
-                                            <Select id="subject" required className="bg-secondary/50 focus:bg-white transition-colors">
-                                                <option value="">Selecciona un asunto...</option>
-                                                <option value="consulta">Consulta General</option>
-                                                <option value="cotizacion">Solicitar Cotización</option>
-                                                <option value="seguimiento">Seguimiento de Trámite</option>
-                                                <option value="alianza">Alianza para Bufetes</option>
-                                            </Select>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="message" className="text-muted-foreground font-semibold">Mensaje</Label>
-                                            <textarea 
-                                                id="message" 
-                                                className="flex min-h-[140px] w-full rounded-md border border-input bg-secondary/50 focus:bg-white px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-colors" 
-                                                placeholder="Describe brevemente lo que necesitas..." 
-                                                required
-                                            ></textarea>
-                                        </div>
-                                          <div className="space-y-3">
-                                            <Label className="text-muted-foreground font-semibold">Método de contacto preferido</Label>
-                                            <div className="flex items-center space-x-6">
-                                                <label className="flex items-center space-x-2 cursor-pointer">
-                                                    <input type="radio" name="contactMethod" value="whatsapp" className="w-4 h-4 text-vfs-blue focus:ring-vfs-blue border-gray-300" defaultChecked />
-                                                    <span className="text-sm text-foreground">WhatsApp</span>
-                                                </label>
-                                                <label className="flex items-center space-x-2 cursor-pointer">
-                                                    <input type="radio" name="contactMethod" value="email" className="w-4 h-4 text-vfs-blue focus:ring-vfs-blue border-gray-300" />
-                                                    <span className="text-sm text-foreground">Email</span>
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                                            <Button type="submit" size="lg" className="w-full bg-vfs-blue hover:bg-vfs-dark text-white font-bold text-lg h-12 shadow-lg">Enviar Mensaje</Button>
-                                        </motion.div>
-
-                                        
-                                    </form>
-                                </Card>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-
-                    {/* FOOTER */}
-                    <footer className="bg-secondary text-secondary-foreground py-12 text-center text-sm w-full mt-auto border-t border-border">
-                        <div className="max-w-7xl mx-auto px-4">
-                            <p className="mb-4 text-muted-foreground">&copy; {new Date().getFullYear()} Aliada Legal. Todos los derechos reservados.</p>
-                            <div className="flex justify-center space-x-6">
-                                <Button variant="link" className="text-muted-foreground hover:text-foreground">Política de Privacidad</Button>
-                                <Button variant="link" className="text-muted-foreground hover:text-foreground">Términos de Servicio</Button>
-                            </div>
-                        </div>
-                    </footer>
+          {paso === 2 && (
+            <motion.div key="p2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .18 }} aria-live="polite">
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-700" aria-hidden="true">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                </span>
+                <div>
+                  <h2 ref={encabezado} tabIndex={-1} className="font-display text-xl text-gray-900 sm:text-2xl">Solicitud registrada</h2>
+                  <p className="mt-1 max-w-measure text-sm text-gray-500">
+                    Guarda este código: con él puedes ver el estado del trámite en cualquier momento. También te lo enviamos a {f.email}.
+                  </p>
                 </div>
-            );
-        }
+              </div>
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
+              <div className="mt-5 flex flex-wrap items-center gap-3 rounded-lg border border-dashed border-[#003B73]/30 bg-blue-50 px-4 py-3">
+                <span className="text-sm text-gray-500">Tu código</span>
+                <strong className="font-display text-2xl tracking-wide text-[#003B73]">{codigo}</strong>
+                <Button size="sm" variant="outline" onClick={() => {
+                  navigator.clipboard && navigator.clipboard.writeText(codigo);
+                  Swal.fire({ icon: 'success', title: 'Código copiado', confirmButtonColor: '#003B73', timer: 1400, showConfirmButton: false });
+                }}>Copiar</Button>
+              </div>
+
+              <ol className="mt-5 space-y-2 text-sm text-gray-500">
+                <li>1. Un asesor revisa tu caso y te escribe por {f.contacto === 'whatsapp' ? 'WhatsApp' : 'correo'} en menos de 24 horas.</li>
+                <li>2. Te confirmamos el costo y los documentos que debes enviarnos.</li>
+                <li>3. Gestionamos, apostillamos y enviamos con número de guía.</li>
+              </ol>
+
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                <Button onClick={() => onRastrear(codigo)}>Ver el estado ahora</Button>
+                <Button variant="outline" onClick={() => { setPaso(0); setF({ pais: '', documento: '', nombre: '', email: '', telefono: '', contacto: 'whatsapp', mensaje: '' }); setCodigo(null); }}>
+                  Solicitar otro documento
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </Card>
+  );
+}
+
+/* =========================================================================
+   RASTREO
+   ========================================================================= */
+
+function Progreso({ etapa }) {
+  return (
+    <ol className="mt-5 space-y-0 sm:flex sm:space-y-0">
+      {ETAPAS.map((e, i) => {
+        const hecho = i < etapa, actual = i === etapa;
+        return (
+          <li key={e} className="relative flex gap-3 pb-5 last:pb-0 sm:flex-1 sm:flex-col sm:gap-2 sm:pb-0">
+            <div className="flex flex-col items-center sm:w-full sm:flex-row">
+              <span className={cn('z-10 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 text-xs font-semibold',
+                hecho ? 'border-[#003B73] bg-[#003B73] text-white' : actual ? 'border-[#F2A900] bg-[#F2A900] text-[#002a52]' : 'border-gray-200 bg-white text-gray-500')}>
+                {hecho ? '✓' : i + 1}
+              </span>
+              <span className={cn('w-px flex-1 sm:h-px sm:w-full', i === ETAPAS.length - 1 ? 'bg-transparent' : hecho ? 'bg-[#003B73]' : 'bg-line')} aria-hidden="true" />
+            </div>
+            <p className={cn('pb-1 text-sm sm:pr-3', actual ? 'font-semibold text-gray-900' : hecho ? 'text-gray-900' : 'text-gray-500')}>
+              {e}{actual && <span className="ml-1 text-xs font-normal text-yellow-800">· en curso</span>}
+            </p>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function Rastreo({ db, codigoExterno }) {
+  const [valor, setValor] = useState('');
+  const [res, setRes] = useState(null);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (codigoExterno) { setValor(codigoExterno); buscar(codigoExterno); }
+  }, [codigoExterno]);
+
+  const buscar = (code) => {
+    const c = (code || valor).trim().toUpperCase();
+    if (!c) { setError('Escribe tu código de rastreo.'); setRes(null); return; }
+    const r = db[c];
+    if (r) { setRes({ ...r, codigo: c }); setError(''); }
+    else { setRes(null); setError('No encontramos el código ' + c + '. Revísalo en tu correo de confirmación: tiene el formato TRK-000.'); }
+  };
+
+  return (
+    <section id="rastreo" className="scroll-mt-24">
+      <Card className="p-5 sm:p-7">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <h2 className="font-display text-2xl text-gray-900">Rastrear un trámite</h2>
+            <p className="mt-1 max-w-measure text-sm text-gray-500">Ingresa el código que te dimos al iniciar la solicitud y verás en qué etapa va.</p>
+          </div>
+          <div className="flex w-full gap-2 lg:w-auto">
+            <div className="flex-1 lg:w-64">
+              <label htmlFor="track" className="sr-only">Código de rastreo</label>
+              <Input id="track" value={valor} placeholder="TRK-001" className="uppercase"
+                aria-describedby={error ? 'track-error' : undefined} invalid={!!error}
+                onChange={e => { setValor(e.target.value); setError(''); }}
+                onKeyDown={e => { if (e.key === 'Enter') buscar(); }} />
+            </div>
+            <Button onClick={() => buscar()} className="shrink-0">Buscar</Button>
+          </div>
+        </div>
+
+        {!res && !error && (
+          <p className="mt-4 text-xs text-gray-500">
+            ¿Solo estás explorando? Prueba con{' '}
+            {['TRK-001', 'TRK-002', 'TRK-003'].map((c, i) => (
+              <React.Fragment key={c}>
+                {i > 0 && ', '}
+                <button onClick={() => { setValor(c); buscar(c); }} className={cn('rounded font-medium text-[#003B73] underline underline-offset-2', focusRing)}>{c}</button>
+              </React.Fragment>
+            ))}.
+          </p>
+        )}
+
+        {error && <p id="track-error" role="alert" className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</p>}
+
+        <AnimatePresence>
+          {res && (
+            <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: .2 }}
+              className="mt-6 border-t border-gray-200 pt-6" aria-live="polite">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <h3 className="font-display text-xl text-[#003B73]">{res.codigo} · {res.servicio}</h3>
+                <span className="text-xs text-gray-500">Actualizado el {res.actualizado}</span>
+              </div>
+              <p className="mt-1 text-sm text-gray-500">{res.cliente} · Documento emitido en {res.pais}</p>
+
+              <Progreso etapa={res.etapa} />
+
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-lg bg-gray-50 p-4">
+                  <p className="text-xs font-medium text-gray-500">Estado</p>
+                  <p className="mt-1 text-sm text-gray-900">{res.nota}</p>
+                </div>
+                <div className="rounded-lg bg-gray-50 p-4">
+                  <p className="text-xs font-medium text-gray-500">{res.guia ? 'Número de guía' : 'Entrega estimada'}</p>
+                  <p className="mt-1 text-sm text-gray-900">{res.guia || res.fechaEstimada}</p>
+                </div>
+              </div>
+
+              {res.pendiente && (
+                <div className="mt-3 rounded-lg border border-[#F2A900]/40 bg-yellow-50 p-4">
+                  <p className="text-sm font-semibold text-yellow-800">Necesitamos algo de tu parte</p>
+                  <p className="mt-1 text-sm text-gray-900">{res.pendiente}</p>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </Card>
+    </section>
+  );
+}
+
+/* =========================================================================
+   GUÍA POR PAÍS
+   ========================================================================= */
+
+function BloqueRequisito({ titulo, poder, filas }) {
+  const flag = poderFlag(poder);
+  return (
+    <div className="border-t border-gray-200 pt-5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h4 className="font-display text-lg text-gray-900">{titulo}</h4>
+        <Badge tone={flag}>{FLAG_META[flag].label}</Badge>
+      </div>
+      <dl className="mt-3 grid gap-3 sm:grid-cols-2">
+        {filas.map(([t, d]) => (
+          <div key={t} className="rounded-lg bg-gray-50 p-4">
+            <dt className="text-xs font-medium text-gray-500">{t}</dt>
+            <dd className="mt-1 text-sm text-gray-900">{d}</dd>
+          </div>
+        ))}
+      </dl>
+      <p className="mt-3 text-sm text-gray-500"><span className="font-medium text-gray-900">Detalle del poder: </span>{poder}</p>
+    </div>
+  );
+}
+
+function GuiaPais() {
+  const [pais, setPais] = useState('El Salvador');
+  const [filtro, setFiltro] = useState('');
+  const c = countryData[pais];
+  const docs = generalDocumentsData.filter(d => (d.documento + d.tramite).toLowerCase().includes(filtro.toLowerCase()));
+
+  return (
+    <section id="guia" className="scroll-mt-24">
+      <div className="max-w-measure">
+        <h2 className="font-display text-3xl text-gray-900">Qué pide cada país</h2>
+        <p className="mt-2 text-gray-500">La pregunta más común es si hace falta un poder notarial. Aquí está la respuesta por país y documento, antes de que gastes en una notaría.</p>
+      </div>
+
+      <Card className="mt-6 p-5 sm:p-7">
+        <div className="max-w-sm">
+          <Field id="guia-pais" label="País de origen del documento">
+            <Select id="guia-pais" value={pais} onChange={e => setPais(e.target.value)}>
+              {PAISES.map(p => <option key={p}>{p}</option>)}
+            </Select>
+          </Field>
+        </div>
+
+        <div className="mt-6 space-y-6">
+          <BloqueRequisito titulo="Antecedentes penales" poder={c.antecedentes.poder}
+            filas={[['Cómo se tramita', c.antecedentes.tramite], ['Qué debes presentar', c.antecedentes.requisitos]]} />
+          <BloqueRequisito titulo="Partida de nacimiento" poder={c.nacimiento.poder}
+            filas={[['Institución', c.nacimiento.institucion], ['Qué debes presentar', c.nacimiento.requisitos]]} />
+          <BloqueRequisito titulo="Poder notarial" poder={'Es el poder mismo — lo otorgas tú directamente'}
+            filas={[
+              ['Dónde se otorga', c.poderNotarial.donde],
+              ['Qué debes llevar al notario', 'Identificación vigente, nombre completo del apoderado, descripción específica de los actos autorizados y, si es sobre un inmueble, su dirección y número de matrícula.'],
+              ['Para qué sirve', 'Compraventa de inmuebles, herencias, trámites bancarios limitados, impuestos, vehículos, cobro de pensiones y administración de propiedades.'],
+              ['Después de firmarlo', 'Necesita apostilla o legalización si se usará en un país distinto de donde se firmó.']
+            ]} />
+        </div>
+      </Card>
+
+      <div className="mt-8">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h3 className="font-display text-2xl text-gray-900">Los demás documentos</h3>
+            <p className="mt-1 text-sm text-gray-500">El mecanismo es practically igual en los ocho países.</p>
+          </div>
+          <div className="w-full sm:w-64">
+            <label htmlFor="filtro-doc" className="sr-only">Buscar documento</label>
+            <Input id="filtro-doc" value={filtro} onChange={e => setFiltro(e.target.value)} placeholder="Buscar: divorcio, matrimonio…" />
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          {docs.map(d => {
+            const flag = poderFlag(d.poder);
+            return (
+              <Card key={d.documento} className="p-5">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <h4 className="font-medium text-gray-900">{d.documento}</h4>
+                  <Badge tone={flag}>{FLAG_META[flag].label}</Badge>
+                </div>
+                <dl className="mt-3 space-y-2 text-sm">
+                  <div><dt className="text-xs font-medium text-gray-500">Dónde se tramita</dt><dd className="text-gray-900">{d.tramite}</dd></div>
+                  <div><dt className="text-xs font-medium text-gray-500">Qué debes presentar</dt><dd className="text-gray-900">{d.requisitos}</dd></div>
+                </dl>
+              </Card>
+            );
+          })}
+          {docs.length === 0 && (
+            <p className="rounded-lg border border-dashed border-gray-200 p-6 text-sm text-gray-500 md:col-span-2">
+              Ningún documento coincide con “{filtro}”. Prueba con otra palabra o escríbenos y lo revisamos contigo.
+            </p>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* =========================================================================
+   SECCIONES DE CONTENIDO
+   ========================================================================= */
+
+function ParaQuien({ setPage }) {
+  const items = [
+    {
+      titulo: 'Si vives fuera de tu país',
+      texto: 'Conseguimos el documento original en tu país de origen, lo apostillamos, lo traducimos si hace falta y te lo enviamos con número de guía.',
+      cta: 'Iniciar mi trámite', accion: () => irA('solicitud'),
+      img: 'https://images.unsplash.com/photo-1573164574572-cb89e39749b4?auto=format&fit=crop&w=900&q=80'
+    },
+    {
+      titulo: 'Si eres un bufete',
+      texto: 'Funcionamos como el brazo operativo de firmas legales que necesitan documentación de Latinoamérica con plazos y trazabilidad comprobables.',
+      cta: 'Hablar con el equipo', accion: () => setPage('contacto'),
+      img: 'https://images.unsplash.com/photo-1556761175-5973dc0f32d7?auto=format&fit=crop&w=900&q=80'
+    }
+  ];
+  return (
+    <section className="grid gap-6 md:grid-cols-2">
+      {items.map(i => (
+        <Card key={i.titulo} className="overflow-hidden">
+          <img src={i.img} alt="" className="h-44 w-full object-cover" loading="lazy" />
+          <div className="p-6">
+            <h3 className="font-display text-xl text-gray-900">{i.titulo}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-gray-500">{i.texto}</p>
+            <Button variant="outline" className="mt-4" onClick={i.accion}>{i.cta}</Button>
+          </div>
+        </Card>
+      ))}
+    </section>
+  );
+}
+
+function Testimonios() {
+  const t = [
+    { review: 'Pedí mis antecedentes desde Maryland y llegaron apostillados en dos semanas. Me fueron avisando en cada paso.', autor: 'Juan Pérez', pais: 'El Salvador' },
+    { review: 'Lo que más me sirvió fue saber desde el inicio que no necesitaba poder notarial. Me ahorré el viaje al consulado.', autor: 'María López', pais: 'Guatemala' },
+    { review: 'La partida de nacimiento de mi hija llegó a tiempo para la cita de inmigración. Cero complicaciones.', autor: 'Camila Gómez', pais: 'México' }
+  ];
+  return (
+    <section className="rounded-2xl bg-[#003B73] px-6 py-12 text-white sm:px-10">
+      <h2 className="font-display text-2xl text-white sm:text-3xl">Lo que dicen quienes ya lo hicieron</h2>
+      <div className="mt-8 grid gap-6 md:grid-cols-3">
+        {t.map(x => (
+          <figure key={x.autor} className="border-l-2 border-[#F2A900] pl-4">
+            <blockquote className="text-sm leading-relaxed text-white/90">{x.review}</blockquote>
+            <figcaption className="mt-3 text-sm">
+              <span className="font-medium">{x.autor}</span>
+              <span className="block text-xs text-[#F2A900]">{x.pais}</span>
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function FAQ() {
+  const [abierta, setAbierta] = useState(0);
+  const faqs = [
+    { q: '¿Cuánto tarda un trámite?', a: 'Entre 7 y 15 días hábiles desde que recibimos tus documentos, incluyendo la apostilla. A eso se suma el tiempo de la mensajería internacional, que depende del destino.' },
+    { q: '¿Necesito un poder notarial?', a: 'Depende del país y del documento. En la mayoría de los registros civiles basta una carta poder simple; los antecedentes penales y las sentencias judiciales suelen ser la excepción. Revisa la guía por país más arriba: te lo decimos antes de que pagues nada.' },
+    { q: '¿Qué métodos de pago aceptan?', a: 'Transferencia bancaria, tarjeta y UglyCash para pagos internacionales rápidos, sin importar tu moneda local.' },
+    { q: '¿Los documentos son originales y válidos?', a: 'Sí. Se tramitan directamente ante la institución gubernamental que los emite y se apostillan bajo el Convenio de La Haya, por lo que tienen validez internacional.' },
+    { q: '¿Qué pasa si el trámite no se puede hacer?', a: 'Si la institución no puede emitir el documento, te devolvemos lo pagado menos los aranceles gubernamentales ya desembolsados, y te explicamos por escrito qué ocurrió.' }
+  ];
+  return (
+    <section>
+      <h2 className="font-display text-3xl text-gray-900">Preguntas frecuentes</h2>
+      <div className="mt-6 divide-y divide-line border-y border-gray-200">
+        {faqs.map((f, i) => {
+          const open = abierta === i;
+          return (
+            <div key={i}>
+              <h3>
+                <button onClick={() => setAbierta(open ? null : i)} aria-expanded={open} aria-controls={'faq-' + i}
+                  className={cn('flex w-full items-center justify-between gap-4 py-4 text-left', focusRing)}>
+                  <span className="font-medium text-gray-900">{f.q}</span>
+                  <svg className={cn('h-5 w-5 shrink-0 text-gray-500 transition-transform', open && 'rotate-45')} viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+                    <path strokeLinecap="round" d="M10 4v12M4 10h12" />
+                  </svg>
+                </button>
+              </h3>
+              <AnimatePresence initial={false}>
+                {open && (
+                  <motion.div id={'faq-' + i} initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: .2 }} className="overflow-hidden">
+                    <p className="max-w-measure pb-5 text-sm leading-relaxed text-gray-500">{f.a}</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function Pagos() {
+  const pagar = () => {
+    Swal.fire({
+      title: 'Pagar con UglyCash',
+      text: 'Te llevamos a la app para completar el pago. Volverás aquí al terminar.',
+      icon: 'question', showCancelButton: true,
+      confirmButtonColor: '#003B73', cancelButtonColor: '#5A6779',
+      confirmButtonText: 'Continuar a UglyCash', cancelButtonText: 'Ahora no'
+    }).then(r => {
+      if (r.isConfirmed) Swal.fire({ title: 'Generando tu link de pago', text: 'Te redirigimos en unos segundos.', icon: 'success', confirmButtonColor: '#003B73' });
+    });
+  };
+  return (
+    <section className="grid items-center gap-8 rounded-2xl border border-gray-200 bg-white p-6 md:grid-cols-2 sm:p-10">
+      <div>
+        <h2 className="font-display text-2xl text-gray-900 sm:text-3xl">Paga desde donde estés</h2>
+        <p className="mt-3 max-w-measure text-gray-500">Aceptamos transferencia, tarjeta y UglyCash. Verás el costo total —aranceles, apostilla, traducción y envío— antes de pagar. Sin cargos que aparecen después.</p>
+        <Button variant="accent" size="lg" className="mt-6" onClick={pagar}>Pagar con UglyCash</Button>
+      </div>
+      <img src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=800&q=80" alt="" loading="lazy" className="rounded-xl border border-gray-200" />
+    </section>
+  );
+}
+
+/* =========================================================================
+   PÁGINAS
+   ========================================================================= */
+
+function Home({ db, agregarTramite, codigoRastreo, setCodigoRastreo, setPage }) {
+  return (
+    <>
+      <section className="relative overflow-hidden bg-[#002a52] text-white">
+        <div className="hero-grid absolute inset-0" aria-hidden="true" />
+        <div className="relative mx-auto max-w-6xl px-4 pb-28 pt-16 sm:px-6 sm:pt-20">
+          <motion.div initial={reduceMotion ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .5 }}>
+            <p className="text-sm text-[#F2A900]">8 países · apostilla y traducción incluidas</p>
+            <h1 className="mt-3 max-w-3xl font-display text-4xl leading-[1.1] sm:text-5xl md:text-6xl">
+              Los documentos de tu país, sin volver a tu país
+            </h1>
+            <p className="mt-5 max-w-measure text-lg text-white/80">
+              Si te piden una partida de nacimiento, antecedentes penales o un poder notarial y no tienes quién los tramite allá, nosotros los solicitamos, apostillamos y te los enviamos.
+            </p>
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Button variant="accent" size="lg" onClick={() => irA('solicitud')}>Empezar mi solicitud</Button>
+              <Button size="lg" onClick={() => irA('rastreo')} className="border border-white/25 bg-white/10 text-white hover:bg-white/20">
+                Rastrear un trámite
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      <div className="mx-auto -mt-20 max-w-6xl px-4 sm:px-6">
+        <Asistente onNuevoTramite={agregarTramite} onRastrear={(c) => { setCodigoRastreo(c); setTimeout(() => irA('rastreo'), 80); }} />
+      </div>
+
+      <div className="mx-auto max-w-6xl space-y-16 px-4 py-16 sm:px-6 sm:py-20">
+        <div className="grid gap-6 border-y border-gray-200 py-8 sm:grid-cols-3">
+          {[
+            ['7 a 15 días hábiles', 'Plazo promedio del trámite, incluida la apostilla.'],
+            ['Envío con número de guía', 'Sabes dónde está tu documento en todo momento.'],
+            ['Aliados locales verificados', 'Notarios y gestores en cada país de origen.']
+          ].map(([t, d]) => (
+            <div key={t}>
+              <p className="font-display text-xl text-[#003B73]">{t}</p>
+              <p className="mt-1 text-sm text-gray-500">{d}</p>
+            </div>
+          ))}
+        </div>
+
+        <Rastreo db={db} codigoExterno={codigoRastreo} />
+        <GuiaPais />
+        <ParaQuien setPage={setPage} />
+        <Testimonios />
+        <FAQ />
+        <Pagos />
+      </div>
+    </>
+  );
+}
+
+function Servicios() {
+  const s = [
+    { t: 'Antecedentes penales', d: 'Certificados policiales o judiciales para residencia, visa o empleo.', l: ['Gestión presencial o en línea según el país', 'Apostilla de La Haya', 'Traducción certificada'] },
+    { t: 'Partidas de nacimiento', d: 'Copias certificadas emitidas por el Registro Civil que corresponde.', l: ['Búsqueda en archivos nacionales', 'Apostilla de La Haya', 'Traducción certificada'] },
+    { t: 'Poderes notariales', d: 'Redacción, revisión y legalización de poderes generales o especiales.', l: ['Venta de inmuebles', 'Herencias y sucesiones', 'Trámites bancarios y vehiculares'] },
+    { t: 'Otros certificados', d: 'Matrimonio, soltería, divorcio e historial académico.', l: ['Certificados de matrimonio o soltería', 'Sentencias de divorcio', 'Historial académico apostillado'] }
+  ];
+  return (
+    <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+      <h1 className="font-display text-4xl text-gray-900">Servicios</h1>
+      <p className="mt-3 max-w-measure text-gray-500">Gestionamos el documento en tu país de origen y te lo entregamos listo para usar donde vives. Todo lo que sigue incluye apostilla y, si la necesitas, traducción certificada.</p>
+      <div className="mt-10 grid gap-6 md:grid-cols-2">
+        {s.map(x => (
+          <Card key={x.t} className="p-6">
+            <h2 className="font-display text-xl text-[#003B73]">{x.t}</h2>
+            <p className="mt-2 text-sm text-gray-500">{x.d}</p>
+            <ul className="mt-4 space-y-2">
+              {x.l.map(i => (
+                <li key={i} className="flex gap-2 text-sm text-gray-900">
+                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#F2A900]" aria-hidden="true" />{i}
+                </li>
+              ))}
+            </ul>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Nosotros() {
+  return (
+    <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
+      <h1 className="font-display text-4xl text-gray-900">Nosotros</h1>
+      <div className="mt-6 max-w-measure space-y-4 text-gray-500">
+        <p>Aliada Legal nació de un problema concreto: cuando alguien emigra, los documentos que necesita siguen en su país de origen, y las instituciones que los emiten casi nunca atienden a distancia.</p>
+        <p>Trabajamos con notarios, gestores y abogados en ocho países para solicitar esos documentos, apostillarlos y enviarlos. Coordinamos con registros civiles, ministerios y juzgados, y te mantenemos informado en cada etapa.</p>
+      </div>
+      <div className="mt-10 grid gap-6 sm:grid-cols-3">
+        {[
+          ['Qué hacemos', 'Simplificamos la burocracia transfronteriza con un proceso trazable de principio a fin.'],
+          ['Hacia dónde vamos', 'Ser la plataforma de referencia para la diáspora latinoamericana y los despachos que la representan.'],
+          ['Cómo trabajamos', 'Transparencia en costos, plazos realistas y confidencialidad con tus datos.']
+        ].map(([t, d]) => (
+          <Card key={t} className="p-6">
+            <h2 className="font-display text-lg text-[#003B73]">{t}</h2>
+            <p className="mt-2 text-sm text-gray-500">{d}</p>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Contacto() {
+  const [f, setF] = useState({ nombre: '', email: '', asunto: '', mensaje: '', contacto: 'whatsapp' });
+  const [err, setErr] = useState({});
+  const [enviado, setEnviado] = useState(false);
+  const set = (k, v) => { setF(p => ({ ...p, [k]: v })); setErr(e => ({ ...e, [k]: null })); };
+  // El foco viaja al encabezado del paso para que el lector de pantalla anuncie el cambio
+  useEffect(() => { if (paso > 0 && encabezado.current) encabezado.current.focus({ preventScroll: true }); }, [paso]);
+
+  const enviar = () => {
+    const e = {};
+    if (f.nombre.trim().length < 3) e.nombre = 'Escribe tu nombre completo.';
+    if (!emailOk(f.email)) e.email = 'Revisa el correo: falta el @ o el dominio.';
+    if (!f.asunto) e.asunto = 'Elige un asunto para dirigir tu mensaje.';
+    if (f.mensaje.trim().length < 10) e.mensaje = 'Cuéntanos un poco más para poder ayudarte.';
+    setErr(e);
+    if (Object.keys(e).length) return;
+    setEnviado(true);
+  };
+
+  if (enviado) return (
+    <div className="mx-auto max-w-2xl px-4 py-24 text-center sm:px-6">
+      <h1 className="font-display text-3xl text-gray-900">Mensaje enviado</h1>
+      <p className="mt-3 text-gray-500">Te responderemos a {f.email} dentro de las próximas 24 horas hábiles.</p>
+      <Button variant="outline" className="mt-6" onClick={() => { setEnviado(false); setF({ nombre: '', email: '', asunto: '', mensaje: '', contacto: 'whatsapp' }); }}>Escribir otro mensaje</Button>
+    </div>
+  );
+
+  return (
+    <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6">
+      <h1 className="font-display text-4xl text-gray-900">Contacto</h1>
+      <p className="mt-3 text-gray-500">¿Tu caso no encaja en la lista? Escríbenos y lo revisamos contigo.</p>
+
+      <Card className="mt-8 p-6 sm:p-8">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field id="c-nombre" label="Nombre completo" error={err.nombre}>
+            <Input id="c-nombre" value={f.nombre} invalid={!!err.nombre} autoComplete="name" onChange={e => set('nombre', e.target.value)} />
+          </Field>
+          <Field id="c-email" label="Correo electrónico" error={err.email}>
+            <Input id="c-email" type="email" value={f.email} invalid={!!err.email} autoComplete="email" onChange={e => set('email', e.target.value)} />
+          </Field>
+        </div>
+        <div className="mt-4">
+          <Field id="c-asunto" label="Asunto" error={err.asunto}>
+            <Select id="c-asunto" value={f.asunto} invalid={!!err.asunto} onChange={e => set('asunto', e.target.value)}>
+              <option value="">Elige un asunto</option>
+              <option>Consulta general</option>
+              <option>Cotización de un trámite</option>
+              <option>Seguimiento de un trámite en curso</option>
+              <option>Alianza para bufetes</option>
+            </Select>
+          </Field>
+        </div>
+        <div className="mt-4">
+          <Field id="c-msg" label="Mensaje" error={err.mensaje}>
+            <Textarea id="c-msg" value={f.mensaje} onChange={e => set('mensaje', e.target.value)} placeholder="Cuéntanos qué documento necesitas y para cuándo." />
+          </Field>
+        </div>
+        <Button variant="accent" size="lg" className="mt-6 w-full" onClick={enviar}>Enviar mensaje</Button>
+      </Card>
+    </div>
+  );
+}
+
+function Footer({ setPage }) {
+  return (
+    <footer className="mt-auto border-t border-gray-200 bg-white">
+      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:grid-cols-3 sm:px-6">
+        <div>
+          <p className="font-display text-xl text-[#003B73]">Aliada Legal</p>
+          <p className="mt-2 max-w-xs text-sm text-gray-500">Documentos legales de Latinoamérica, gestionados y enviados a donde vivas.</p>
+        </div>
+        <nav aria-label="Pie de página">
+          <h2 className="text-sm font-medium text-gray-900">Navegación</h2>
+          <ul className="mt-3 space-y-2 text-sm">
+            {NAV.map(n => (
+              <li key={n.id}><button onClick={() => { setPage(n.id); window.scrollTo({ top: 0 }); }} className={cn('rounded text-gray-500 hover:text-[#003B73]', focusRing)}>{n.label}</button></li>
+            ))}
+          </ul>
+        </nav>
+        <div>
+          <h2 className="text-sm font-medium text-gray-900">Legal</h2>
+          <ul className="mt-3 space-y-2 text-sm text-gray-500">
+            <li><a href="#" className={cn('rounded hover:text-[#003B73]', focusRing)}>Política de privacidad</a></li>
+            <li><a href="#" className={cn('rounded hover:text-[#003B73]', focusRing)}>Términos de servicio</a></li>
+          </ul>
+        </div>
+      </div>
+      <div className="border-t border-gray-200 py-6 text-center text-xs text-gray-500">
+        © {new Date().getFullYear()} Aliada Legal. Todos los derechos reservados.
+      </div>
+    </footer>
+  );
+}
+
+/* =========================================================================
+   APP
+   ========================================================================= */
+
+function App() {
+  const [page, setPage] = useState('home');
+  const [misTramites, setMisTramites] = useState({});
+  const [codigoRastreo, setCodigoRastreo] = useState(null);
+  const db = useMemo(() => ({ ...trackingDatabase, ...misTramites }), [misTramites]);
+
+  const agregarTramite = (codigo, datos) => setMisTramites(p => ({ ...p, [codigo]: datos }));
+
+  return (
+    <div className="flex min-h-screen flex-col bg-gray-50">
+      <a href="#contenido" className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[60] focus:rounded-lg focus:bg-[#003B73] focus:px-4 focus:py-2 focus:text-white">
+        Saltar al contenido
+      </a>
+      <Navbar page={page} setPage={setPage} />
+      <main id="contenido" className="flex-1">
+        {page === 'home' && <Home db={db} agregarTramite={agregarTramite} codigoRastreo={codigoRastreo} setCodigoRastreo={setCodigoRastreo} setPage={setPage} />}
+        {page === 'servicios' && <Servicios />}
+        {page === 'nosotros' && <Nosotros />}
+        {page === 'contacto' && <Contacto />}
+      </main>
+      <Footer setPage={setPage} />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
 </body>
 </html>
