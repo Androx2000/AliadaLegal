@@ -423,20 +423,28 @@ function PhoneField({ id, value, onChange, invalid }) {
   useEffect(() => {
     if (!ref.current || !window.intlTelInput) return;
     iti.current = window.intlTelInput(ref.current, {
-      initialCountry: 'sv',
-      onlyCountries: ['sv', 'mx', 'gt', 'hn', 'co', 'ec', 'pe', 'ar'],
+      initialCountry: 'us',
+      onlyCountries: ['us', 'sv', 'mx', 'gt', 'hn', 'co', 'ec', 'pe', 'ar'],
       separateDialCode: true,
       utilsScript: 'https://cdn.jsdelivr.net/npm/intl-tel-input@23.0.12/build/js/utils.js'
     });
     const el = ref.current;
-    const handler = () => onChange(iti.current && iti.current.getNumber ? (iti.current.getNumber() || el.value) : el.value);
-    el.addEventListener('countrychange', handler);
-    return () => { el.removeEventListener('countrychange', handler); if (iti.current) iti.current.destroy(); };
+    const notify = () => {
+      const val = iti.current && iti.current.getNumber ? (iti.current.getNumber() || el.value) : el.value;
+      const valid = iti.current ? iti.current.isValidNumber() : false;
+      onChange(val, valid);
+    };
+    el.addEventListener('countrychange', notify);
+    el.addEventListener('input', notify);
+    return () => { 
+      el.removeEventListener('countrychange', notify); 
+      el.removeEventListener('input', notify); 
+      if (iti.current) iti.current.destroy(); 
+    };
   }, []);
   return (
     <input
       ref={ref} id={id} type="tel" inputMode="tel" defaultValue={value}
-      onChange={(e) => onChange(iti.current && iti.current.getNumber ? (iti.current.getNumber() || e.target.value) : e.target.value)}
       className={inputCls(invalid)}
     />
   );
@@ -523,7 +531,7 @@ const PASOS = ['Qué necesitas', 'Cómo te contactamos', 'Listo'];
 
 function Asistente({ onNuevoTramite, onRastrear }) {
   const [paso, setPaso] = useState(0);
-  const [f, setF] = useState({ pais: '', documento: '', nombre: '', email: '', telefono: '', contacto: 'whatsapp', mensaje: '' });
+  const [f, setF] = useState({ pais: '', documento: '', nombre: '', email: '', telefono: '', telefonoValido: false, contacto: 'whatsapp', mensaje: '' });
   const [err, setErr] = useState({});
   const [codigo, setCodigo] = useState(null);
   const encabezado = useRef(null);
@@ -546,7 +554,7 @@ function Asistente({ onNuevoTramite, onRastrear }) {
     const e = {};
     if (f.nombre.trim().length < 3) e.nombre = 'Escribe tu nombre completo.';
     if (!emailOk(f.email)) e.email = 'Revisa el correo: falta el @ o el dominio.';
-    if (f.telefono.replace(/\D/g, '').length < 7) e.telefono = 'Escribe un número donde podamos escribirte.';
+    if (!f.telefono || !f.telefonoValido) e.telefono = 'Escribe un número de teléfono válido para el país.';
     setErr(e);
     if (Object.keys(e).length) return;
     const code = nuevoCodigo();
@@ -585,7 +593,7 @@ function Asistente({ onNuevoTramite, onRastrear }) {
               <h2 ref={encabezado} tabIndex={-1} className="font-display text-xl text-gray-900 sm:text-2xl">Empecemos por el documento</h2>
               <p className="mt-1 max-w-measure text-sm text-gray-500">Dinos qué necesitas y te mostramos, antes de pedirte nada más, qué hace falta para conseguirlo.</p>
 
-              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <div className="mt-5 grid gap-6 sm:gap-8 sm:grid-cols-2">
                 <Field id="w-pais" label="País que emite el documento" error={err.pais}>
                   <Select id="w-pais" value={f.pais} invalid={!!err.pais} onChange={e => set('pais', e.target.value)}>
                     <option value="">Elige un país</option>
@@ -632,7 +640,7 @@ function Asistente({ onNuevoTramite, onRastrear }) {
                 {f.documento} de {f.pais}. <button onClick={() => setPaso(0)} className={cn('text-[#003B73] underline underline-offset-4 rounded', focusRing)}>Cambiar</button>
               </p>
 
-              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+              <div className="mt-5 grid gap-6 sm:gap-8 sm:grid-cols-2">
                 <Field id="w-nombre" label="Nombre completo" error={err.nombre}>
                   <Input id="w-nombre" value={f.nombre} invalid={!!err.nombre} autoComplete="name"
                     placeholder="Como aparece en tu identificación" onChange={e => set('nombre', e.target.value)} />
@@ -642,7 +650,7 @@ function Asistente({ onNuevoTramite, onRastrear }) {
                     placeholder="tucorreo@ejemplo.com" onChange={e => set('email', e.target.value)} />
                 </Field>
                 <Field id="w-tel" label="Teléfono" hint="Incluye el código del país donde vives." error={err.telefono}>
-                  <PhoneField id="w-tel" value={f.telefono} invalid={!!err.telefono} onChange={v => set('telefono', v)} />
+                  <PhoneField id="w-tel" value={f.telefono} invalid={!!err.telefono} onChange={(v, valid) => { set('telefono', v); setF(p => ({...p, telefonoValido: valid})); }} />
                 </Field>
                 <fieldset>
                   <legend className="text-sm font-medium text-gray-900">Prefieres que te escribamos por</legend>
@@ -704,7 +712,7 @@ function Asistente({ onNuevoTramite, onRastrear }) {
 
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 <Button onClick={() => onRastrear(codigo)}>Ver el estado ahora</Button>
-                <Button variant="outline" onClick={() => { setPaso(0); setF({ pais: '', documento: '', nombre: '', email: '', telefono: '', contacto: 'whatsapp', mensaje: '' }); setCodigo(null); }}>
+                <Button variant="outline" onClick={() => { setPaso(0); setF({ pais: '', documento: '', nombre: '', email: '', telefono: '', telefonoValido: false, contacto: 'whatsapp', mensaje: '' }); setCodigo(null); }}>
                   Solicitar otro documento
                 </Button>
               </div>
@@ -1067,7 +1075,7 @@ function Home({ db, agregarTramite, codigoRastreo, setCodigoRastreo, setPage }) 
     <>
       <section className="relative overflow-hidden bg-[#002a52] text-white">
         <div className="hero-grid absolute inset-0" aria-hidden="true" />
-        <div className="relative mx-auto max-w-6xl px-4 pb-28 pt-16 sm:px-6 sm:pt-20">
+        <div className="relative mx-auto max-w-6xl px-4 pb-16 pt-16 sm:px-6 sm:pt-20">
           <motion.div initial={reduceMotion ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .5 }}>
             <p className="text-sm text-[#F2A900]">8 países · apostilla y traducción incluidas</p>
             <h1 className="mt-3 max-w-3xl font-display text-4xl leading-[1.1] sm:text-5xl md:text-6xl">
@@ -1086,7 +1094,7 @@ function Home({ db, agregarTramite, codigoRastreo, setCodigoRastreo, setPage }) 
         </div>
       </section>
 
-      <div className="mx-auto -mt-20 max-w-6xl px-4 sm:px-6">
+      <div className="mx-auto mt-12 max-w-6xl px-4 sm:px-6">
         <Asistente onNuevoTramite={agregarTramite} onRastrear={(c) => { setCodigoRastreo(c); setTimeout(() => irA('rastreo'), 80); }} />
       </div>
 
@@ -1202,7 +1210,7 @@ function Contacto() {
       <p className="mt-3 text-gray-500">¿Tu caso no encaja en la lista? Escríbenos y lo revisamos contigo.</p>
 
       <Card className="mt-8 p-6 sm:p-8">
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-6 sm:gap-8 sm:grid-cols-2">
           <Field id="c-nombre" label="Nombre completo" error={err.nombre}>
             <Input id="c-nombre" value={f.nombre} invalid={!!err.nombre} autoComplete="name" onChange={e => set('nombre', e.target.value)} />
           </Field>
