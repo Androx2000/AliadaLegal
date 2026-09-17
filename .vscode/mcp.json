@@ -5,6 +5,10 @@
 			"url": "https://mcp.figma.com/mcp",
 			"gallery": "https://api.mcp.github.com",
 			"version": "1.0.3"
+		},
+		"figma": {
+			"url": "[https://mcp.figma.com/mcp](https://mcp.figma.com/mcp)",
+			"type": "http"
 		}
 	},
 	"inputs": []

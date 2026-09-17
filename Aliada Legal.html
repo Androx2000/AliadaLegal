@@ -19,7 +19,7 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
     
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -113,13 +113,34 @@
             --ring: 222.2 84% 4.9%;
             --radius: 0.5rem;
         }
+          * { box-sizing: border-box; }
         body { 
-            font-family: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
-            background-color: hsl(var(--background));
+            font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif; 
+            background: #f6f8fb;
             color: hsl(var(--foreground));
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
+          .font-display { font-family: "DM Serif Display", Georgia, serif; letter-spacing: 0; }
+          .max-w-measure { max-width: 42rem; }
+          .bg-line { background-color: #d9e0e8; }
+          .hero-grid {
+            background-image: linear-gradient(rgba(255,255,255,.055) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.055) 1px, transparent 1px);
+            background-size: 44px 44px;
+            mask-image: linear-gradient(to right, black, transparent 82%);
+          }
+          .hero-glow {
+            background: radial-gradient(circle at 70% 45%, rgba(242,169,0,.18), transparent 32%), radial-gradient(circle at 94% 10%, rgba(255,255,255,.08), transparent 24%);
+          }
+          .trust-panel { box-shadow: 0 25px 55px -30px rgba(0,0,0,.65); }
+          .lift-on-hover { transition: box-shadow .28s cubic-bezier(.22,1,.36,1), border-color .28s cubic-bezier(.22,1,.36,1); }
+          .lift-on-hover:hover { box-shadow: 0 18px 35px -24px rgba(0,38,74,.65); border-color: rgba(0,59,115,.24); }
+          .image-frame { overflow: hidden; background: #e8edf3; }
+          .image-frame img { transition: transform .7s cubic-bezier(.22,1,.36,1), filter .7s cubic-bezier(.22,1,.36,1); }
+          .image-frame:hover img { transform: scale(1.035); filter: saturate(1.08); }
+          button, input, select, textarea { font: inherit; }
+          button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid rgba(242,169,0,.55); outline-offset: 3px; }
+          ::selection { background: #f2a900; color: #fff; }
         
         /* Ocultar barra de scroll para las tabs */
         .no-scrollbar::-webkit-scrollbar {
@@ -138,6 +159,7 @@
 const { useState, useEffect, useRef, useMemo } = React;
 const { motion, AnimatePresence } = window.Motion;
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const smoothEase = [0.22, 1, 0.36, 1];
 
 /* =========================================================================
    DATOS (Aliada_Legal_Tracking.xlsx / COSTOS Y GANANCIAS.xlsx)
@@ -364,20 +386,44 @@ const focusRing = 'focus-visible:outline-none focus-visible:ring-2 focus-visible
 const Button = React.forwardRef(({ className, variant = 'primary', size = 'md', ...props }, ref) => {
   const variants = {
     primary:   'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm focus:ring-4 focus:ring-primary/30 border border-transparent',
-    accent:    'bg-[#F2A900] text-white hover:bg-[#d89700] border border-transparent font-semibold shadow-sm focus:ring-4 focus:ring-[#F2A900]/30',
-    outline:   'border border-input bg-background hover:bg-accent hover:text-accent-foreground shadow-sm',
-    ghost:     'hover:bg-accent hover:text-accent-foreground',
+    accent:    'bg-[#F2A900] text-white hover:bg-[#ffc247] hover:text-[#002a52] border border-transparent font-semibold shadow-sm focus:ring-4 focus:ring-[#F2A900]/30',
+    outline:   'border border-input bg-background hover:bg-blue-50 hover:text-[#003B73] shadow-sm',
+    ghost:     'hover:bg-blue-50 hover:text-[#003B73]',
     quiet:     'text-primary underline-offset-4 hover:underline'
   };
   const sizes = { sm: 'h-9 px-3 text-sm rounded-lg', md: 'h-11 px-5 text-sm rounded-lg', lg: 'h-12 px-6 text-base rounded-lg' };
-  return <button ref={ref} className={cn('inline-flex items-center justify-center gap-2 font-medium transition-colors disabled:opacity-50 disabled:pointer-events-none', variants[variant], sizes[size], className)} {...props} />;
+  return <button ref={ref} className={cn('inline-flex items-center justify-center gap-2 font-medium disabled:opacity-50 disabled:pointer-events-none', variants[variant], sizes[size], className)} {...props} />;
 });
 Button.displayName = "Button";
 
 const Card = React.forwardRef(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn('rounded-xl border border-gray-200 bg-white text-gray-900 shadow-sm', className)} {...props} />
+  <div ref={ref} className={cn('rounded-xl border border-gray-200/90 bg-white text-gray-900 shadow-[0_12px_35px_-24px_rgba(0,38,74,.5)]', className)} {...props} />
 ));
 Card.displayName = "Card";
+
+function PageHeader({ id, title, description, eyebrow, align = 'left' }) {
+  return (
+    <header className={cn('max-w-2xl', align === 'center' && 'mx-auto text-center')}>
+      {eyebrow && <p className="text-sm font-semibold uppercase tracking-[.12em] text-[#F2A900]">{eyebrow}</p>}
+      <h1 id={id} className="font-display text-4xl leading-tight text-gray-900 sm:text-5xl">{title}</h1>
+      <p className="mt-3 text-base leading-relaxed text-gray-500">{description}</p>
+    </header>
+  );
+}
+
+function Reveal({ children, className }) {
+  return (
+    <motion.div
+      initial={reduceMotion ? false : { opacity: 0, y: 18 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: .16 }}
+      transition={{ duration: .6, ease: smoothEase }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
 
 const Badge = ({ tone = 'depende', children }) => (
   <span className={cn('inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium', FLAG_META[tone].cls)}>{children}</span>
@@ -395,7 +441,7 @@ function Field({ id, label, hint, error, children }) {
 }
 
 const inputCls = (invalid) => cn(
-  'bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary focus:border-primary block w-full px-3 py-2.5 shadow-sm placeholder-gray-400 focus:outline-none transition-colors disabled:cursor-not-allowed disabled:opacity-50',
+  'bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary focus:border-primary block w-full px-3 py-2.5 shadow-[0_2px_8px_-6px_rgba(0,38,74,.45)] placeholder-gray-400 focus:outline-none transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-50',
   invalid && 'border-red-500 ring-red-500 focus:ring-red-500 focus:border-red-500'
 );
 
@@ -504,7 +550,7 @@ function Navbar({ page, setPage }) {
       <AnimatePresence>
         {open && (
           <motion.div id="menu-movil" initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: .2 }} className="overflow-hidden border-t border-gray-200 bg-white md:hidden">
+            transition={{ duration: .32, ease: smoothEase }} className="overflow-hidden border-t border-gray-200 bg-white md:hidden">
             <div className="space-y-1 px-4 py-3">
               {NAV.map(n => (
                 <button key={n.id} onClick={() => go(n.id)} aria-current={page === n.id ? 'page' : undefined}
@@ -589,7 +635,7 @@ function Asistente({ onNuevoTramite, onRastrear }) {
       <div className="p-5 sm:p-7">
         <AnimatePresence mode="wait">
           {paso === 0 && (
-            <motion.div key="p0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .18 }}>
+            <motion.div key="p0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .3, ease: smoothEase }}>
               <h2 ref={encabezado} tabIndex={-1} className="font-display text-xl text-gray-900 sm:text-2xl">Empecemos por el documento</h2>
               <p className="mt-1 max-w-measure text-sm text-gray-500">Dinos qué necesitas y te mostramos, antes de pedirte nada más, qué hace falta para conseguirlo.</p>
 
@@ -611,7 +657,7 @@ function Asistente({ onNuevoTramite, onRastrear }) {
               <AnimatePresence>
                 {req && (
                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: .22 }} className="overflow-hidden">
+                    transition={{ duration: .34, ease: smoothEase }} className="overflow-hidden">
                     <div className="mt-5 rounded-lg border border-[#003B73]/15 bg-blue-50 p-4" aria-live="polite">
                       <div className="flex flex-wrap items-center gap-2">
                         <Badge tone={poderFlag(req.poder)}>{FLAG_META[poderFlag(req.poder)].label}</Badge>
@@ -634,7 +680,7 @@ function Asistente({ onNuevoTramite, onRastrear }) {
           )}
 
           {paso === 1 && (
-            <motion.div key="p1" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .18 }}>
+            <motion.div key="p1" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .3, ease: smoothEase }}>
               <h2 ref={encabezado} tabIndex={-1} className="font-display text-xl text-gray-900 sm:text-2xl">¿Cómo te contactamos?</h2>
               <p className="mt-1 text-sm text-gray-500">
                 {f.documento} de {f.pais}. <button onClick={() => setPaso(0)} className={cn('text-[#003B73] underline underline-offset-4 rounded', focusRing)}>Cambiar</button>
@@ -682,7 +728,7 @@ function Asistente({ onNuevoTramite, onRastrear }) {
           )}
 
           {paso === 2 && (
-            <motion.div key="p2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .18 }} aria-live="polite">
+            <motion.div key="p2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: .3, ease: smoothEase }} aria-live="polite">
               <div className="flex items-start gap-3">
                 <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-700" aria-hidden="true">
                   <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
@@ -805,7 +851,7 @@ function Rastreo({ db, codigoExterno }) {
 
         <AnimatePresence>
           {res && (
-            <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: .2 }}
+            <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: .34, ease: smoothEase }}
               className="mt-6 border-t border-gray-200 pt-6" aria-live="polite">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <h3 className="font-display text-xl text-[#003B73]">{res.codigo} · {res.servicio}</h3>
@@ -957,14 +1003,17 @@ function ParaQuien({ setPage }) {
       titulo: 'Si eres un bufete',
       texto: 'Funcionamos como el brazo operativo de firmas legales que necesitan documentación de Latinoamérica con plazos y trazabilidad comprobables.',
       cta: 'Hablar con el equipo', accion: () => setPage('contacto'),
-      img: 'https://images.unsplash.com/photo-1556761175-5973dc0f32d7?auto=format&fit=crop&w=900&q=80'
+      img: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=900&q=80'
     }
   ];
   return (
     <section className="grid gap-6 md:grid-cols-2">
       {items.map(i => (
         <Card key={i.titulo} className="overflow-hidden">
-          <img src={i.img} alt="" className="h-44 w-full object-cover" loading="lazy" />
+          <div className="image-frame">
+            <img src={i.img} alt={i.titulo} className="h-52 w-full object-cover" loading="lazy"
+              onError={event => { event.currentTarget.src = 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=900&q=80'; }} />
+          </div>
           <div className="p-6">
             <h3 className="font-display text-xl text-gray-900">{i.titulo}</h3>
             <p className="mt-2 text-sm leading-relaxed text-gray-500">{i.texto}</p>
@@ -1029,7 +1078,7 @@ function FAQ() {
               <AnimatePresence initial={false}>
                 {open && (
                   <motion.div id={'faq-' + i} initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: .2 }} className="overflow-hidden">
+                    transition={{ duration: .34, ease: smoothEase }} className="overflow-hidden">
                     <p className="max-w-measure pb-5 text-sm leading-relaxed text-gray-500">{f.a}</p>
                   </motion.div>
                 )}
@@ -1061,7 +1110,9 @@ function Pagos() {
         <p className="mt-3 max-w-measure text-gray-500">Aceptamos transferencia, tarjeta y UglyCash. Verás el costo total —aranceles, apostilla, traducción y envío— antes de pagar. Sin cargos que aparecen después.</p>
         <Button variant="accent" size="lg" className="mt-6" onClick={pagar}>Pagar con UglyCash</Button>
       </div>
-      <img src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=800&q=80" alt="" loading="lazy" className="rounded-xl border border-gray-200" />
+      <div className="image-frame rounded-xl border border-gray-200">
+        <img src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=800&q=80" alt="Pago seguro desde cualquier lugar" loading="lazy" className="h-full min-h-56 w-full object-cover" />
+      </div>
     </section>
   );
 }
@@ -1075,31 +1126,47 @@ function Home({ db, agregarTramite, codigoRastreo, setCodigoRastreo, setPage }) 
     <>
       <section className="relative overflow-hidden bg-[#002a52] text-white">
         <div className="hero-grid absolute inset-0" aria-hidden="true" />
-        <div className="relative mx-auto max-w-6xl px-4 pb-16 pt-16 sm:px-6 sm:pt-20">
-          <motion.div initial={reduceMotion ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .5 }}>
-            <p className="text-sm text-[#F2A900]">8 países · apostilla y traducción incluidas</p>
-            <h1 className="mt-3 max-w-3xl font-display text-4xl leading-[1.1] sm:text-5xl md:text-6xl">
-              Los documentos de tu país, sin volver a tu país
-            </h1>
-            <p className="mt-5 max-w-measure text-lg text-white/80">
-              Si te piden una partida de nacimiento, antecedentes penales o un poder notarial y no tienes quién los tramite allá, nosotros los solicitamos, apostillamos y te los enviamos.
-            </p>
-            <div className="mt-7 flex flex-wrap gap-3">
-              <Button variant="accent" size="lg" onClick={() => irA('solicitud')}>Empezar mi solicitud</Button>
-              <Button size="lg" onClick={() => irA('rastreo')} className="border border-white/25 bg-white/10 text-white hover:bg-white/20">
-                Rastrear un trámite
-              </Button>
-            </div>
+        <div className="hero-glow absolute inset-0" aria-hidden="true" />
+        <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 pb-16 pt-16 sm:px-6 sm:pb-20 sm:pt-20 lg:grid-cols-[1.15fr_.85fr]">
+          <motion.div initial={reduceMotion ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .58, ease: smoothEase }}>
+              <p className="text-sm font-medium text-[#F2A900]">8 países · apostilla y traducción incluidas</p>
+              <h1 className="mt-3 max-w-3xl font-display text-4xl leading-[1.1] sm:text-5xl md:text-6xl">
+                Los documentos de tu país, sin volver a tu país
+              </h1>
+              <p className="mt-5 max-w-measure text-lg leading-relaxed text-white/80">
+                Si te piden una partida de nacimiento, antecedentes penales o un poder notarial y no tienes quién los tramite allí, nosotros los solicitamos, apostillamos y te los enviamos.
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3">
+                <Button variant="accent" size="lg" onClick={() => irA('solicitud')}>Empezar mi solicitud</Button>
+                <Button size="lg" onClick={() => irA('rastreo')} className="border border-white/25 bg-white/10 text-white hover:bg-white/20">
+                  Rastrear un trámite
+                </Button>
+              </div>
           </motion.div>
+
+          <motion.aside initial={reduceMotion ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: .12, duration: .58, ease: smoothEase }} className="trust-panel rounded-2xl border border-white/15 bg-white/[.09] p-5 backdrop-blur-sm sm:p-6">
+            <div className="flex items-center justify-between border-b border-white/15 pb-4">
+              <span className="text-sm font-medium text-white/80">Así funciona</span>
+              <span className="rounded-full bg-[#F2A900] px-2.5 py-1 text-xs font-semibold text-[#002a52]">Simple y trazable</span>
+            </div>
+            <ol className="mt-5 space-y-5">
+              {[['01', 'Cuéntanos qué documento necesitas', 'Te decimos los requisitos antes de avanzar.'], ['02', 'Un aliado lo gestiona en tu país', 'Coordinamos con registros, notarios y autoridades.'], ['03', 'Lo recibes listo para usar', 'Apostillado, traducido y enviado con guía.']].map(([n, t, d]) => (
+                <li key={n} className="flex gap-3">
+                  <span className="font-display text-2xl text-[#F2A900]">{n}</span>
+                  <span><strong className="block text-sm font-semibold text-white">{t}</strong><span className="mt-1 block text-xs leading-relaxed text-white/65">{d}</span></span>
+                </li>
+              ))}
+            </ol>
+          </motion.aside>
         </div>
       </section>
 
-      <div className="mx-auto mt-12 max-w-6xl px-4 sm:px-6">
+      <section aria-label="Iniciar una solicitud" className="mx-auto mt-12 max-w-6xl px-4 sm:px-6">
         <Asistente onNuevoTramite={agregarTramite} onRastrear={(c) => { setCodigoRastreo(c); setTimeout(() => irA('rastreo'), 80); }} />
-      </div>
+      </section>
 
       <div className="mx-auto max-w-6xl space-y-16 px-4 py-16 sm:px-6 sm:py-20">
-        <div className="grid gap-6 border-y border-gray-200 py-8 sm:grid-cols-3">
+        <section aria-label="Por qué elegir Aliada Legal" className="grid gap-6 border-y border-gray-200 py-8 sm:grid-cols-3">
           {[
             ['7 a 15 días hábiles', 'Plazo promedio del trámite, incluida la apostilla.'],
             ['Envío con número de guía', 'Sabes dónde está tu documento en todo momento.'],
@@ -1110,14 +1177,13 @@ function Home({ db, agregarTramite, codigoRastreo, setCodigoRastreo, setPage }) 
               <p className="mt-1 text-sm text-gray-500">{d}</p>
             </div>
           ))}
-        </div>
+        </section>
 
-        <Rastreo db={db} codigoExterno={codigoRastreo} />
-        <GuiaPais />
-        <ParaQuien setPage={setPage} />
-        <Testimonios />
-        <FAQ />
-        <Pagos />
+        <Reveal><Rastreo db={db} codigoExterno={codigoRastreo} /></Reveal>
+        <Reveal><ParaQuien setPage={setPage} /></Reveal>
+        <Reveal><Testimonios /></Reveal>
+        <Reveal><FAQ /></Reveal>
+        <Reveal><Pagos /></Reveal>
       </div>
     </>
   );
@@ -1131,59 +1197,71 @@ function Servicios() {
     { t: 'Otros certificados', d: 'Matrimonio, soltería, divorcio e historial académico.', l: ['Certificados de matrimonio o soltería', 'Sentencias de divorcio', 'Historial académico apostillado'] }
   ];
   return (
-    <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-      <h1 className="font-display text-4xl text-gray-900">Servicios</h1>
-      <p className="mt-3 max-w-measure text-gray-500">Gestionamos el documento en tu país de origen y te lo entregamos listo para usar donde vives. Todo lo que sigue incluye apostilla y, si la necesitas, traducción certificada.</p>
-      <div className="mt-10 grid gap-6 md:grid-cols-2">
-        {s.map(x => (
-          <Card key={x.t} className="p-6">
-            <h2 className="font-display text-xl text-[#003B73]">{x.t}</h2>
-            <p className="mt-2 text-sm text-gray-500">{x.d}</p>
-            <ul className="mt-4 space-y-2">
-              {x.l.map(i => (
-                <li key={i} className="flex gap-2 text-sm text-gray-900">
-                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#F2A900]" aria-hidden="true" />{i}
-                </li>
-              ))}
-            </ul>
-          </Card>
-        ))}
-      </div>
+    <div className="mx-auto max-w-6xl space-y-24 px-4 py-16 sm:px-6">
+      <section aria-labelledby="servicios-titulo">
+        <PageHeader id="servicios-titulo" eyebrow="Lo que gestionamos" title="Servicios" description="Gestionamos el documento en tu país de origen y te lo entregamos listo para usar donde vives. Todo lo que sigue incluye apostilla y, si la necesitas, traducción certificada." />
+        <div className="mt-10 grid gap-6 md:grid-cols-2">
+          {s.map(x => (
+            <Card key={x.t} className="lift-on-hover p-6">
+              <h2 className="font-display text-xl text-[#003B73]">{x.t}</h2>
+              <p className="mt-2 text-sm text-gray-500">{x.d}</p>
+              <ul className="mt-4 space-y-2">
+                {x.l.map(i => (
+                  <li key={i} className="flex gap-2 text-sm text-gray-900">
+                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#F2A900]" aria-hidden="true" />{i}
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          ))}
+        </div>
+      </section>
+      
+      <GuiaPais />
+      <Pagos />
+      <FAQ />
     </div>
   );
 }
 
-function Nosotros() {
+function Nosotros({ setPage }) {
   return (
-    <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
-      <h1 className="font-display text-4xl text-gray-900">Nosotros</h1>
-      <div className="mt-6 max-w-measure space-y-4 text-gray-500">
-        <p>Aliada Legal nació de un problema concreto: cuando alguien emigra, los documentos que necesita siguen en su país de origen, y las instituciones que los emiten casi nunca atienden a distancia.</p>
-        <p>Trabajamos con notarios, gestores y abogados en ocho países para solicitar esos documentos, apostillarlos y enviarlos. Coordinamos con registros civiles, ministerios y juzgados, y te mantenemos informado en cada etapa.</p>
-      </div>
-      <div className="mt-10 grid gap-6 sm:grid-cols-3">
-        {[
-          ['Qué hacemos', 'Simplificamos la burocracia transfronteriza con un proceso trazable de principio a fin.'],
-          ['Hacia dónde vamos', 'Ser la plataforma de referencia para la diáspora latinoamericana y los despachos que la representan.'],
-          ['Cómo trabajamos', 'Transparencia en costos, plazos realistas y confidencialidad con tus datos.']
-        ].map(([t, d]) => (
-          <Card key={t} className="p-6">
-            <h2 className="font-display text-lg text-[#003B73]">{t}</h2>
-            <p className="mt-2 text-sm text-gray-500">{d}</p>
-          </Card>
-        ))}
-      </div>
+    <div className="mx-auto max-w-6xl space-y-24 px-4 py-16 sm:px-6">
+      <section aria-labelledby="nosotros-titulo" className="mx-auto max-w-4xl">
+        <PageHeader id="nosotros-titulo" eyebrow="La red detrás del trámite" align="center" title="Nosotros" description="Aliada Legal nació de un problema concreto: cuando alguien emigra, los documentos que necesita siguen en su país de origen, y las instituciones que los emiten casi nunca atienden a distancia." />
+        <div className="mx-auto mt-6 max-w-measure space-y-4 text-center text-gray-500">
+          <p>Trabajamos con notarios, gestores y abogados en ocho países para solicitar esos documentos, apostillarlos y enviarlos. Coordinamos con registros civiles, ministerios y juzgados, y te mantenemos informado en cada etapa.</p>
+        </div>
+        <div className="mt-10 grid gap-6 sm:grid-cols-3">
+          {[
+            ['Qué hacemos', 'Simplificamos la burocracia transfronteriza con un proceso trazable de principio a fin.'],
+            ['Hacia dónde vamos', 'Ser la plataforma de referencia para la diáspora latinoamericana y los despachos que la representan.'],
+            ['Cómo trabajamos', 'Transparencia en costos, plazos realistas y confidencialidad con tus datos.']
+          ].map(([t, d]) => (
+            <Card key={t} className="p-6 text-left">
+              <h2 className="font-display text-lg text-[#003B73]">{t}</h2>
+              <p className="mt-2 text-sm text-gray-500">{d}</p>
+            </Card>
+          ))}
+        </div>
+      </section>
+      
+      <ParaQuien setPage={setPage} />
+      <Testimonios />
     </div>
   );
 }
 
 function Contacto() {
   const [f, setF] = useState({ nombre: '', email: '', asunto: '', mensaje: '', contacto: 'whatsapp' });
+  const [sug, setSug] = useState({ email: '', mensaje: '' });
   const [err, setErr] = useState({});
+  const [sugErr, setSugErr] = useState({});
   const [enviado, setEnviado] = useState(false);
+  const [sugEnviado, setSugEnviado] = useState(false);
+  
   const set = (k, v) => { setF(p => ({ ...p, [k]: v })); setErr(e => ({ ...e, [k]: null })); };
-  // El foco viaja al encabezado del paso para que el lector de pantalla anuncie el cambio
-  useEffect(() => { if (paso > 0 && encabezado.current) encabezado.current.focus({ preventScroll: true }); }, [paso]);
+  const setS = (k, v) => { setSug(p => ({ ...p, [k]: v })); setSugErr(e => ({ ...e, [k]: null })); };
 
   const enviar = () => {
     const e = {};
@@ -1196,46 +1274,91 @@ function Contacto() {
     setEnviado(true);
   };
 
-  if (enviado) return (
-    <div className="mx-auto max-w-2xl px-4 py-24 text-center sm:px-6">
-      <h1 className="font-display text-3xl text-gray-900">Mensaje enviado</h1>
-      <p className="mt-3 text-gray-500">Te responderemos a {f.email} dentro de las próximas 24 horas hábiles.</p>
-      <Button variant="outline" className="mt-6" onClick={() => { setEnviado(false); setF({ nombre: '', email: '', asunto: '', mensaje: '', contacto: 'whatsapp' }); }}>Escribir otro mensaje</Button>
-    </div>
-  );
+  const enviarSugerencia = () => {
+    const e = {};
+    if (sug.email && !emailOk(sug.email)) e.email = 'Correo inválido.';
+    if (sug.mensaje.trim().length < 5) e.mensaje = 'Por favor, escribe tu sugerencia.';
+    setSugErr(e);
+    if (Object.keys(e).length) return;
+    setSugEnviado(true);
+  };
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6">
-      <h1 className="font-display text-4xl text-gray-900">Contacto</h1>
-      <p className="mt-3 text-gray-500">¿Tu caso no encaja en la lista? Escríbenos y lo revisamos contigo.</p>
+    <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
+      <PageHeader id="contacto-titulo" eyebrow="Estamos para ayudarte" align="center" title="Contacto" description="¿Tu caso no encaja en la lista? Escríbenos y lo revisamos contigo." />
 
-      <Card className="mt-8 p-6 sm:p-8">
-        <div className="grid gap-6 sm:gap-8 sm:grid-cols-2">
-          <Field id="c-nombre" label="Nombre completo" error={err.nombre}>
-            <Input id="c-nombre" value={f.nombre} invalid={!!err.nombre} autoComplete="name" onChange={e => set('nombre', e.target.value)} />
-          </Field>
-          <Field id="c-email" label="Correo electrónico" error={err.email}>
-            <Input id="c-email" type="email" value={f.email} invalid={!!err.email} autoComplete="email" onChange={e => set('email', e.target.value)} />
-          </Field>
+      <section aria-labelledby="contacto-titulo" className="mt-12 grid gap-12 lg:grid-cols-5">
+        
+        {/* Formulario Principal */}
+        <div className="lg:col-span-3">
+          {enviado ? (
+            <Card className="p-8 text-center h-full flex flex-col justify-center items-center">
+              <h2 className="font-display text-2xl text-gray-900">Mensaje enviado</h2>
+              <p className="mt-3 text-gray-500">Te responderemos a {f.email} dentro de las próximas 24 horas hábiles.</p>
+              <Button variant="outline" className="mt-6" onClick={() => { setEnviado(false); setF({ nombre: '', email: '', asunto: '', mensaje: '', contacto: 'whatsapp' }); }}>Escribir otro mensaje</Button>
+            </Card>
+          ) : (
+            <Card className="p-6 sm:p-8">
+              <h2 className="font-display text-2xl text-[#003B73] mb-6">Escríbenos</h2>
+              <div className="grid gap-6 sm:gap-8 sm:grid-cols-2">
+                <Field id="c-nombre" label="Nombre completo" error={err.nombre}>
+                  <Input id="c-nombre" value={f.nombre} invalid={!!err.nombre} autoComplete="name" onChange={e => set('nombre', e.target.value)} />
+                </Field>
+                <Field id="c-email" label="Correo electrónico" error={err.email}>
+                  <Input id="c-email" type="email" value={f.email} invalid={!!err.email} autoComplete="email" onChange={e => set('email', e.target.value)} />
+                </Field>
+              </div>
+              <div className="mt-4">
+                <Field id="c-asunto" label="Asunto" error={err.asunto}>
+                  <Select id="c-asunto" value={f.asunto} invalid={!!err.asunto} onChange={e => set('asunto', e.target.value)}>
+                    <option value="">Elige un asunto</option>
+                    <option>Consulta general</option>
+                    <option>Cotización de un trámite</option>
+                    <option>Seguimiento de un trámite en curso</option>
+                    <option>Alianza para bufetes</option>
+                  </Select>
+                </Field>
+              </div>
+              <div className="mt-4">
+                <Field id="c-msg" label="Mensaje" error={err.mensaje}>
+                  <Textarea id="c-msg" value={f.mensaje} onChange={e => set('mensaje', e.target.value)} placeholder="Cuéntanos qué documento necesitas y para cuándo." />
+                </Field>
+              </div>
+              <div className="mt-6 flex justify-end">
+                <Button onClick={enviar}>Enviar mensaje</Button>
+              </div>
+            </Card>
+          )}
         </div>
-        <div className="mt-4">
-          <Field id="c-asunto" label="Asunto" error={err.asunto}>
-            <Select id="c-asunto" value={f.asunto} invalid={!!err.asunto} onChange={e => set('asunto', e.target.value)}>
-              <option value="">Elige un asunto</option>
-              <option>Consulta general</option>
-              <option>Cotización de un trámite</option>
-              <option>Seguimiento de un trámite en curso</option>
-              <option>Alianza para bufetes</option>
-            </Select>
-          </Field>
+
+        {/* Formulario de Sugerencias */}
+        <div className="lg:col-span-2">
+          {sugEnviado ? (
+            <Card className="p-8 text-center bg-gray-50 border-gray-200">
+              <h2 className="font-display text-xl text-gray-900">¡Gracias por tu sugerencia!</h2>
+              <p className="mt-3 text-sm text-gray-500">Valoramos mucho tus comentarios para seguir mejorando.</p>
+              <Button variant="outline" size="sm" className="mt-6" onClick={() => { setSugEnviado(false); setSug({ email: '', mensaje: '' }); }}>Enviar otra</Button>
+            </Card>
+          ) : (
+            <Card className="p-6 sm:p-8 bg-gray-50 border-gray-200">
+              <h2 className="font-display text-xl text-[#003B73]">Buzón de sugerencias</h2>
+              <p className="mt-2 text-sm text-gray-500 mb-6">Ayúdanos a mejorar. Déjanos tus comentarios, quejas o sugerencias.</p>
+              <div className="space-y-4">
+                <Field id="s-email" label="Correo (Opcional)" error={sugErr.email}>
+                  <Input id="s-email" type="email" value={sug.email} invalid={!!sugErr.email} onChange={e => setS('email', e.target.value)} placeholder="Solo si deseas respuesta" />
+                </Field>
+                <Field id="s-msg" label="Sugerencia" error={sugErr.mensaje}>
+                  <Textarea id="s-msg" className="min-h-[80px]" value={sug.mensaje} onChange={e => setS('mensaje', e.target.value)} placeholder="¿Qué podemos hacer mejor?" />
+                </Field>
+                <div className="mt-4">
+                  <Button variant="outline" className="w-full" onClick={enviarSugerencia}>Enviar sugerencia</Button>
+                </div>
+              </div>
+            </Card>
+          )}
         </div>
-        <div className="mt-4">
-          <Field id="c-msg" label="Mensaje" error={err.mensaje}>
-            <Textarea id="c-msg" value={f.mensaje} onChange={e => set('mensaje', e.target.value)} placeholder="Cuéntanos qué documento necesitas y para cuándo." />
-          </Field>
-        </div>
-        <Button variant="accent" size="lg" className="mt-6 w-full" onClick={enviar}>Enviar mensaje</Button>
-      </Card>
+
+      </section>
     </div>
   );
 }
@@ -1292,7 +1415,7 @@ function App() {
       <main id="contenido" className="flex-1">
         {page === 'home' && <Home db={db} agregarTramite={agregarTramite} codigoRastreo={codigoRastreo} setCodigoRastreo={setCodigoRastreo} setPage={setPage} />}
         {page === 'servicios' && <Servicios />}
-        {page === 'nosotros' && <Nosotros />}
+        {page === 'nosotros' && <Nosotros setPage={setPage} />}
         {page === 'contacto' && <Contacto />}
       </main>
       <Footer setPage={setPage} />
