@@ -3,8 +3,8 @@
 with codecs.open('Aliada Legal.html', 'r', encoding='utf-8') as f:
     content = f.read()
 
-content = content.replace("selection:bg-vfs-gold", "selection:bg-accent")
+content = content.replace("setIsEn(document.cookie.includes('googtrans=/es/en'));\n", "")
 
 with codecs.open('Aliada Legal.html', 'w', encoding='utf-8') as f:
     f.write(content)
-print("Removed vfs-gold from selection")
+print("Removed cookie logic")
