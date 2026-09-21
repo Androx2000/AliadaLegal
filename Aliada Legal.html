@@ -675,12 +675,31 @@ function Navbar({ page, setPage }) {
 
 
 function TerminosModal({ open, onClose, onAccept }) {
-  // Prevent body scroll when modal is open
+  const [canAccept, setCanAccept] = React.useState(false);
+  const contentRef = React.useRef(null);
+
   React.useEffect(() => {
-    if (open) document.body.style.overflow = 'hidden';
-    else document.body.style.overflow = '';
+    if (open) {
+      document.body.style.overflow = 'hidden';
+      setCanAccept(false);
+      setTimeout(() => {
+        if (contentRef.current) {
+          const { scrollTop, scrollHeight, clientHeight } = contentRef.current;
+          if (scrollHeight <= clientHeight + 5) setCanAccept(true);
+        }
+      }, 100);
+    } else {
+      document.body.style.overflow = '';
+    }
     return () => { document.body.style.overflow = ''; };
   }, [open]);
+
+  const handleScroll = (e) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.target;
+    if (scrollHeight - scrollTop <= clientHeight + 5) {
+      setCanAccept(true);
+    }
+  };
 
   if (!open) return null;
 
@@ -690,15 +709,20 @@ function TerminosModal({ open, onClose, onAccept }) {
         className="w-full max-w-2xl bg-card rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
         role="dialog" aria-modal="true" aria-labelledby="terms-title"
       >
-        <div className="flex justify-between items-center px-6 py-4 border-b border-border">
+        <div className="flex justify-between items-center px-6 py-4 border-b border-border bg-card">
           <h2 id="terms-title" className="font-display text-xl text-foreground">Términos y Condiciones</h2>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground p-1 rounded-md focus:outline-none focus:ring-2 focus:ring-ring">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
           </button>
         </div>
         
-        <div className="px-6 py-6 overflow-y-auto flex-1 prose prose-sm max-w-none text-foreground/80" style={{ maxHeight: 'calc(90vh - 140px)' }}>
-          <h3 className="text-lg font-bold text-foreground">ALIADA LEGAL</h3>
+        <div 
+          ref={contentRef}
+          onScroll={handleScroll}
+          className="px-6 py-6 overflow-y-auto flex-1 prose prose-sm max-w-none text-foreground/80 bg-card relative" 
+          style={{ maxHeight: 'calc(90vh - 140px)' }}
+        >
+          <h3 className="text-lg font-bold text-foreground mt-0">ALIADA LEGAL</h3>
           <p>Al contratar, solicitar o utilizar los servicios de Aliada Legal, el cliente declara que ha leído, comprendido y aceptado los siguientes Términos y Condiciones. Estos términos regulan la prestación de servicios de coordinación, gestión e intermediación logística relacionados con la obtención, procesamiento, traducción, apostilla, legalización, transporte y entrega de documentos.</p>
           
           <h4 className="font-bold mt-4 text-foreground">1. NATURALEZA DEL SERVICIO</h4>
@@ -733,7 +757,7 @@ function TerminosModal({ open, onClose, onAccept }) {
           <h4 className="font-bold mt-4 text-foreground">7. DOCUMENTOS PERDIDOS, NO RECIBIDOS, DAÑADOS O EXTRAVIADOS</h4>
           <p>Cuando el servicio incluya el envío, traslado, entrega o recepción de documentos físicos, Aliada Legal podrá utilizar servicios de mensajería, courier, correo, transporte u otros proveedores independientes.</p>
           <p>El cliente reconoce que durante el transporte pueden ocurrir pérdidas, extravíos, retrasos, daños, entregas incorrectas, devoluciones, retenciones o imposibilidad de entrega por circunstancias que se encuentren fuera del control directo de Aliada Legal.</p>
-          <p>Aliada Legal realizará las gestiones razonables de seguimiento y coordinación que correspondan ante el proveedor responsable. Sin embargo, <strong>Aliada Legal no garantiza la entrega efectiva de los documentos ni será responsable por pérdidas, extravíos, daños, retrasos, entregas incorrectas o documentos que no lleguen a su destinatario cuando dichos hechos sean atribuibles al servicio de mensajería, courier, correo, transporte, authority, proveedor externo u otro tercero</strong>, salvo cuando la legislación aplicable establezca una responsabilidad que no pueda excluirse.</p>
+          <p>Aliada Legal realizará las gestiones razonables de seguimiento y coordinación que correspondan ante el proveedor responsable. Sin embargo, <strong>Aliada Legal no garantiza la entrega efectiva de los documentos ni será responsable por pérdidas, extravíos, daños, retrasos, entregas incorrectas o documentos que no lleguen a su destinatario cuando dichos hechos sean atribuibles al servicio de mensajería, courier, correo, transporte, autoridad, proveedor externo u otro tercero</strong>, salvo cuando la legislación aplicable establezca una responsabilidad que no pueda excluirse.</p>
           <p>En caso de pérdida, extravío, daño o no recepción de documentos, <strong>el cliente acepta que el monto pagado por el servicio no necesariamente será reembolsado en su totalidad y que Aliada Legal no garantiza un reembolso del 100%</strong>.</p>
           <p>Cualquier reembolso o compensación que pudiera corresponder podrá estar sujeto a los costos ya incurridos, al estado de ejecución del servicio, a las condiciones aplicables y, cuando corresponda, a los montos efectivamente recuperados de la empresa de mensajería, proveedor o tercero responsable.</p>
           <p>Los gastos ya utilizados o pagados a terceros, incluyendo, entre otros, tasas gubernamentales, documentos, certificados, traducciones, apostillas, legalizaciones, honorarios profesionales, transporte, mensajería y otros costos no recuperables, podrán no ser reembolsables.</p>
@@ -774,9 +798,11 @@ function TerminosModal({ open, onClose, onAccept }) {
           <p>Estos Términos y Condiciones se interpretarán y aplicarán en la máxima medida permitida por las leyes aplicables al servicio y a la jurisdicción correspondiente. En aquellos aspectos en los que resulte legalmente aplicable y permitido, podrá aplicarse la legislación de la República de El Salvador.</p>
           <p>Si alguna disposición de estos Términos y Condiciones fuera considerada inválida o inaplicable, las demás disposiciones permanecerán vigentes en la medida permitida por la legislación aplicable.</p>
 
-          <div className="mt-8 pt-4 border-t border-border flex justify-end gap-3">
-            <Button variant="outline" onClick={onClose}>Cerrar</Button>
-            <Button variant="accent" onClick={() => { onAccept(); onClose(); }}>Aceptar términos</Button>
+          <div className="mt-8 pt-4 border-t border-border flex justify-end gap-3 sticky bottom-0 bg-card pb-2">
+            <Button variant="outline" onClick={onClose}>Cancelar</Button>
+            <Button variant="accent" disabled={!canAccept} onClick={() => { onAccept(); onClose(); }}>
+              {canAccept ? 'Aceptar' : 'Desliza para aceptar'}
+            </Button>
           </div>
         </div>
       </div>
@@ -814,9 +840,10 @@ function Asistente({ onNuevoTramite, onRastrear }) {
     if (f.nombre.trim().length < 3) e.nombre = 'Escribe tu nombre completo.';
     if (!emailOk(f.email)) e.email = 'Revisa el correo: falta el @ o el dominio.';
     if (!f.telefono || !f.telefonoValido) e.telefono = 'Escribe un número de teléfono válido para el país.';
-      if (!termsAccepted) e.terms = "Debes aceptar los Términos y Condiciones para continuar.";
+    if (!termsAccepted) e.terms = "Debes aceptar los Términos y Condiciones para continuar.";
     setErr(e);
     if (Object.keys(e).length) return;
+    
     const code = nuevoCodigo();
     onNuevoTramite(code, {
       cliente: f.nombre, pais: f.pais,
@@ -938,9 +965,16 @@ function Asistente({ onNuevoTramite, onRastrear }) {
                     <div className="flex items-center h-5">
                       <input 
                         type="checkbox" 
-                        className="w-4 h-4 rounded border-border text-primary focus:ring-primary accent-primary" 
+                        className="w-4 h-4 rounded border-border text-primary focus:ring-primary accent-primary cursor-pointer" 
                         checked={termsAccepted} 
-                        onChange={(e) => { setTermsAccepted(e.target.checked); setErr(prev => ({...prev, terms: null})); }} 
+                        onChange={(e) => { 
+                          if (e.target.checked) {
+                            setShowTerms(true);
+                          } else {
+                            setTermsAccepted(false);
+                          }
+                          setErr(prev => ({...prev, terms: null}));
+                        }} 
                       />
                     </div>
                     <div className="text-sm">
