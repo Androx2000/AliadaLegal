@@ -2,13 +2,13 @@ import {
 
     FileCheck2,
     FileText,
-    Lenguages,
+    Languages,
     Scale,
     ScrollText,
     Truck,
 } from 'lucide-react';
 
-export const servicesData = [
+export const services = [
     {
 
         id: 'antecedentes',
@@ -37,7 +37,7 @@ export const servicesData = [
         id: 'traducciones',
         title: 'Traducciones',
         description:       'Coordinamos traducciones de documentos cuando el trámite internacional lo requiere.',
-        icon: Lenguages,
+        icon: Languages,
         featured: false,
     },
 

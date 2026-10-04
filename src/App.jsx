@@ -1,6 +1,6 @@
 import Navbar from '@/components/layout/Navbar'
 import Hero from '@/components/home/Hero'
-import ServiceSection from '@/components/home/ServiceSection'
+import ServicesSection from '@/features/services/ServicesSection'
 
 function App() {
   return (
@@ -9,7 +9,7 @@ function App() {
 
       <main>
         <Hero />
-        <ServiceSection />
+        <ServicesSection />
       </main>
     </>
   )
