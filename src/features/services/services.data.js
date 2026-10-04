@@ -13,7 +13,7 @@ export const services = [
 
         id: 'antecedentes',
         title: 'Antecedentes',
-        description: 'Gestionamos ceritifcados de antecendentes y los pasos adicionales necesecarios para utilizarlos internacionalmente.',
+        description: 'Gestionamos certificados de antecedentes y los pasos adicionales necesarios para utilizarlos internacionalmente.',
         icon: FileCheck2,
         featured: true,
     },
