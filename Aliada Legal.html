@@ -1359,36 +1359,6 @@ function FAQ() {
   );
 }
 
-function Pagos() {
-  const pagar = () => {
-    Swal.fire({
-      title: 'Pagar con Wompi',
-      text: 'Te llevamos a la pasarela segura para completar el pago. Volverás aquí al terminar.',
-      icon: 'question', showCancelButton: true,
-      confirmButtonColor: 'hsl(var(--primary))', cancelButtonColor: '#5A6779',
-      confirmButtonText: 'Continuar a Wompi', cancelButtonText: 'Ahora no'
-    }).then(r => {
-      if (r.isConfirmed) Swal.fire({ title: 'Generando tu link de pago', text: 'Te redirigimos en unos segundos.', icon: 'success', confirmButtonColor: 'hsl(var(--primary))' });
-    });
-  };
-  return (
-    <section className="grid items-center gap-8 rounded-2xl border border-border bg-card p-6 md:grid-cols-2 sm:p-10">
-      <div>
-        <h2 className="font-display text-2xl text-foreground sm:text-3xl">Paga desde donde estés</h2>
-        <p className="mt-3 max-w-measure text-muted-foreground">Aceptamos transferencia, tarjeta y Wompi. Verás el costo total —aranceles, apostilla, traducción y envío— antes de pagar. Sin cargos que aparecen después.</p>
-        <Button variant="accent" size="lg" className="mt-6" onClick={pagar}>Pagar con Wompi</Button>
-      </div>
-      <div className="image-frame rounded-xl border border-border">
-        <img src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=800&q=80" alt="Pago seguro desde cualquier lugar" loading="lazy" className="h-full min-h-56 w-full object-cover" />
-      </div>
-    </section>
-  );
-}
-
-/* =========================================================================
-   PÁGINAS
-   ========================================================================= */
-
 function Home({ db, agregarTramite, codigoRastreo, setCodigoRastreo, setPage }) {
   return (
     <>
@@ -1451,7 +1421,6 @@ function Home({ db, agregarTramite, codigoRastreo, setCodigoRastreo, setPage }) 
         <Reveal><ParaQuien setPage={setPage} /></Reveal>
         <Reveal><Testimonios /></Reveal>
         <Reveal><FAQ /></Reveal>
-        <Reveal><Pagos /></Reveal>
       </div>
     </>
   );
@@ -1486,7 +1455,6 @@ function Servicios() {
       </section>
       
       <GuiaPais />
-      <Pagos />
       <FAQ />
     </div>
   );
