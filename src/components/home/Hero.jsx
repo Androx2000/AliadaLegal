@@ -5,7 +5,7 @@ import {
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
-import heroImage from '@/assets/hero.png'
+import heroImage from '@/assets/hero.jpg'
 
 function Hero() {
   return (
