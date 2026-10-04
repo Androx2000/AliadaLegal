@@ -1,30 +1,15 @@
-
-import Button from './components/ui/Button.jsx'
-
+import { Button } from '@/components/ui/button'
 
 function App() {
   return (
-    <main>
-<h1>Aliada Legal</h1>
-      <p>Migracion a React + Vite funcionando</p>
+    <main className="min-h-screen p-10">
+      <h1 className="mb-6 text-4xl font-bold">
+        Aliada Legal
+      </h1>
 
-<Button
-onClick={() => alert('Botón clickeado')}
-aria-label="Iniciar trámite"
-disabled={false}
->
-  Iniciar Tramite
-</Button>
-
-
-<Button type="submit">
-  Enviar solicitud
-</Button>
-
-<Button className="boton-principal">
-  Iniciar trámite
-</Button>
-
+      <Button>
+        Iniciar trámite
+      </Button>
     </main>
   )
 }
