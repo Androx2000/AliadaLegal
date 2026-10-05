@@ -1,6 +1,6 @@
 import {
-    countryData,
-    generalDocumentsData,
+  countryData,
+  generalDocumentsData,
 } from './request.data'
 
 export function resolveRequirements(country, document) {
@@ -8,46 +8,48 @@ export function resolveRequirements(country, document) {
     return null
   }
 
-const countryInfo = countryData[country]
+  const countryInfo = countryData[country]
 
-if (!countryInfo) {
+  if (!countryInfo) {
     return null
-}
+  }
 
-if (document === 'Antecedentes penales') {
+  if (document === 'Antecedentes penales') {
     return {
-        tramite: countryInfo.antecedentes.tramite,
-        poder: countryInfo.antecedentes.poder,
-        requisitos: countryInfo.antecedentes.requisitos,
+      tramite: countryInfo.antecedentes.tramite,
+      poder: countryInfo.antecedentes.poder,
+      requisitos: countryInfo.antecedentes.requisitos,
     }
-}
+  }
 
-if (document === 'Partida de nacimiento') {
+  if (document === 'Partida de nacimiento') {
     return {
-        tramite: 'Institución: ${countryInfo.nacimiento.institucion}',
-        poder: countryInfo.nacimiento.poder,
-        requisitos: countryInfo.nacimiento.requisitos,
+      tramite: `Institución: ${countryInfo.nacimiento.institucion}`,
+      poder: countryInfo.nacimiento.poder,
+      requisitos: countryInfo.nacimiento.requisitos,
     }
-}
+  }
 
-if (document === 'Poder notarial') {
+  if (document === 'Poder notarial') {
     return {
-        tramite: 'Se otorga ante: ${countryInfo.poderNotarial.donde}',
-        poder: 'Es el poder mismo - lo otorgas tú directamente',
-        requisitos: 'Identificación vigente, datos del apoderado y descripción específica de los actos que autorizas',
-   
+      tramite: `Se otorga ante: ${countryInfo.poderNotarial.donde}`,
+      poder: 'Es el poder mismo — lo otorgas tú directamente',
+      requisitos:
+        'Identificación vigente, datos del apoderado y descripción específica de los actos que autorizas',
     }
-}
+  }
 
-const generalDocument = generalDocumentsData.find((item) => item.document === document)
+  const generalDocument = generalDocumentsData.find(
+    (item) => item.documento === document
+  )
 
-if (!generalDocument) {
+  if (!generalDocument) {
     return null
-}
+  }
 
-return {
+  return {
     tramite: generalDocument.tramite,
     poder: generalDocument.poder,
     requisitos: generalDocument.requisitos,
-}
+  }
 }
