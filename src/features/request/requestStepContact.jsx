@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 
 function RequestStepContact({
   formData,
+  errors,
   onFieldChange,
 }) {
   return (
@@ -43,7 +44,15 @@ function RequestStepContact({
             }
             placeholder="Tu nombre completo"
             autoComplete="name"
+            aria-invalid={Boolean(errors.name)}
+
           />
+          {errors.name && (
+  <p className="mt-2 text-sm text-destructive">
+    {errors.name}
+  </p>
+  
+)}
         </div>
 
         <div>
@@ -64,7 +73,14 @@ function RequestStepContact({
             }
             placeholder="nombre@correo.com"
             autoComplete="email"
+            aria-invalid={Boolean(errors.email)}
+
           />
+          {errors.email && (
+  <p className="mt-2 text-sm text-destructive">
+    {errors.email}
+  </p>
+)}
         </div>
 
         <div>
@@ -85,7 +101,14 @@ function RequestStepContact({
             }
             placeholder="+503 7000 0000"
             autoComplete="tel"
+            aria-invalid={Boolean(errors.phone)}
+
           />
+          {errors.phone && (
+  <p className="mt-2 text-sm text-destructive">
+    {errors.phone}
+  </p>
+)}
         </div>
 
         <div className="sm:col-span-2">
@@ -108,7 +131,7 @@ function RequestStepContact({
                 WhatsApp
               </SelectItem>
 
-              <SelectItem value="email">
+              <SelectItem value="Correo electrónico">
                 Correo electrónico
               </SelectItem>
             </SelectContent>

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 
+import RequestStepConfirmation from './RequestStepConfirmation'
 import RequestStepContact from './RequestStepContact'
 import RequestStepService from './RequestStepService'
 import { resolveRequirements } from './request.utils'
@@ -16,9 +17,11 @@ function RequestWizard() {
     name: '',
     email: '',
     phone: '',
-    contactMethod: '',
+    contactMethod: 'whatsapp',
     message: '',
   })
+
+  const [errors, setErrors] = useState({})
 
   const requirements = useMemo(
     () => resolveRequirements(country, document),
@@ -32,6 +35,43 @@ function RequestWizard() {
       ...currentData,
       [field]: value,
     }))
+
+    setErrors((currentErrors) => ({
+      ...currentErrors,
+      [field]: undefined,
+    }))
+  }
+
+  function validateContactStep() {
+    const newErrors = {}
+
+    if (formData.name.trim().length < 3) {
+      newErrors.name = 'Escribe tu nombre completo.'
+    }
+
+    if (
+      !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(
+        formData.email.trim()
+      )
+    ) {
+      newErrors.email = 'Ingresa un correo electrónico válido.'
+    }
+
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'Ingresa tu número de teléfono.'
+    }
+
+    setErrors(newErrors)
+
+    return Object.keys(newErrors).length === 0
+  }
+
+  function handleContactContinue() {
+    if (!validateContactStep()) {
+      return
+    }
+
+    setStep(3)
   }
 
   return (
@@ -51,19 +91,37 @@ function RequestWizard() {
         </div>
 
         <div className="mt-8 flex items-center justify-center gap-3 text-sm">
-          <span className={step === 1 ? 'font-semibold text-accent' : 'text-muted-foreground'}>
+          <span
+            className={
+              step === 1
+                ? 'font-semibold text-accent'
+                : 'text-muted-foreground'
+            }
+          >
             1. Tu trámite
           </span>
 
           <span className="text-border">—</span>
 
-          <span className={step === 2 ? 'font-semibold text-accent' : 'text-muted-foreground'}>
+          <span
+            className={
+              step === 2
+                ? 'font-semibold text-accent'
+                : 'text-muted-foreground'
+            }
+          >
             2. Tus datos
           </span>
 
           <span className="text-border">—</span>
 
-          <span className="text-muted-foreground">
+          <span
+            className={
+              step === 3
+                ? 'font-semibold text-accent'
+                : 'text-muted-foreground'
+            }
+          >
             3. Confirmación
           </span>
         </div>
@@ -82,7 +140,16 @@ function RequestWizard() {
           {step === 2 && (
             <RequestStepContact
               formData={formData}
+              errors={errors}
               onFieldChange={handleFieldChange}
+            />
+          )}
+
+          {step === 3 && (
+            <RequestStepConfirmation
+              country={country}
+              document={document}
+              formData={formData}
             />
           )}
 
@@ -104,6 +171,18 @@ function RequestWizard() {
                 onClick={() => setStep(2)}
               >
                 Continuar
+              </Button>
+            )}
+
+            {step === 2 && (
+              <Button onClick={handleContactContinue}>
+                Continuar
+              </Button>
+            )}
+
+            {step === 3 && (
+              <Button>
+                Enviar solicitud
               </Button>
             )}
           </div>
