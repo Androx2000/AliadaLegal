@@ -86,44 +86,56 @@ function RequestStepContact({
         </div>
 
       
-  <div className="mt-2">
+ <div>
+  <label
+    htmlFor="request-phone"
+    className="text-sm font-medium"
+  >
+    Teléfono
+  </label>
 
-<IntlTelInput
-  value={formData.phone}
-  initialCountry="us"
-  onlyCountries={[
-    'sv',
-    'us',
-    'mx',
-    'gt',
-    'hn',
-    'co',
-    'ec',
-    'pe',
-    'ar',
-  ]}
-  separateDialCode
-  strictMode
-  loadUtils={() => import('intl-tel-input/utils')}
-  onChangeNumber={(number) =>
-    onFieldChange('phone', number)
-  }
-  onChangeValidity={(isValid) =>
-    onFieldChange('phoneValid', isValid)
-  }
-  onChangeCountry={(iso2) =>
-    onFieldChange('phoneCountry', iso2)
-  }
-  inputProps={{
-    id: 'request-phone',
-    name: 'phone',
-    autoComplete: 'tel',
-    placeholder: '7000 0000',
-    'aria-invalid': Boolean(errors.phone),
-    className:
-      'h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none',
-  }}
-/>
+  <div className="mt-2">
+    <IntlTelInput
+      value={formData.phone}
+      initialCountry="us"
+      onlyCountries={[
+        'sv',
+        'us',
+        'mx',
+        'gt',
+        'hn',
+        'co',
+        'ec',
+        'pe',
+        'ar',
+      ]}
+      separateDialCode
+      strictMode
+      loadUtils={() => import('intl-tel-input/utils')}
+      onChangeNumber={(number) =>
+        onFieldChange('phone', number)
+      }
+      onChangeValidity={(isValid) =>
+        onFieldChange('phoneValid', isValid)
+      }
+      onChangeCountry={(iso2) =>
+        onFieldChange('phoneCountry', iso2)
+      }
+      inputProps={{
+        id: 'request-phone',
+        name: 'phone',
+        autoComplete: 'tel',
+        placeholder: '7000 0000',
+        'aria-invalid': Boolean(errors.phone),
+      }}
+    />
+  </div>
+
+  {errors.phone && (
+    <p className="mt-2 text-sm text-destructive">
+      {errors.phone}
+    </p>
+  )}
 </div>
 
         <div className="sm:col-span-2">
@@ -142,11 +154,11 @@ function RequestStepContact({
             </SelectTrigger>
 
             <SelectContent>
-              <SelectItem value="Whatsapp">
+              <SelectItem value="whatsapp">
                 WhatsApp
               </SelectItem>
 
-              <SelectItem value="Correo electrónico">
+              <SelectItem value="email">
                 Correo electrónico
               </SelectItem>
             </SelectContent>

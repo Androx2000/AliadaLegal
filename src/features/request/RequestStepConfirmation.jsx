@@ -7,6 +7,11 @@ import {
   FileText,
 } from 'lucide-react'
 
+const contactMethodLabels = {
+  whatsapp: 'WhatsApp',
+  email: 'Correo electrónico',
+}
+
 function RequestStepConfirmation({
   country,
   document,
@@ -82,21 +87,19 @@ function RequestStepConfirmation({
             </div>
           </div>
 
-          <div className="flex gap-3 sm:col-span-2">
-            <MessageCircle className="mt-0.5 size-5 shrink-0 text-accent" />
+        <div className="flex gap-3 sm:col-span-2">
+  <MessageCircle className="mt-0.5 size-5 shrink-0 text-accent" />
 
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">
-                Contacto preferido
-              </p>
+  <div>
+    <p className="text-xs font-medium text-muted-foreground">
+      Contacto preferido
+    </p>
 
-              <p className="mt-1 font-medium">
-                {formData.contactMethod === 'Whatsapp'
-                  ? 'WhatsApp'
-                  : 'Correo electrónico'}
-              </p>
-            </div>
-          </div>
+    <p className="mt-1 font-medium">
+      {contactMethodLabels[formData.contactMethod]}
+    </p>
+  </div>
+</div>
         </div>
       </div>
 
