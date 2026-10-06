@@ -1,4 +1,6 @@
 import { Input } from '@/components/ui/input'
+import IntlTelInput from '@intl-tel-input/react'
+import 'intl-tel-input/styles'
 import {
   Select,
   SelectContent,
@@ -83,33 +85,46 @@ function RequestStepContact({
 )}
         </div>
 
-        <div>
-          <label
-            htmlFor="request-phone"
-            className="text-sm font-medium"
-          >
-            Teléfono
-          </label>
+      
+  <div className="mt-2">
 
-          <Input
-            id="request-phone"
-            type="tel"
-            className="mt-2"
-            value={formData.phone}
-            onChange={(event) =>
-              onFieldChange('phone', event.target.value)
-            }
-            placeholder="+503 7000 0000"
-            autoComplete="tel"
-            aria-invalid={Boolean(errors.phone)}
-
-          />
-          {errors.phone && (
-  <p className="mt-2 text-sm text-destructive">
-    {errors.phone}
-  </p>
-)}
-        </div>
+<IntlTelInput
+  value={formData.phone}
+  initialCountry="us"
+  onlyCountries={[
+    'sv',
+    'us',
+    'mx',
+    'gt',
+    'hn',
+    'co',
+    'ec',
+    'pe',
+    'ar',
+  ]}
+  separateDialCode
+  strictMode
+  loadUtils={() => import('intl-tel-input/utils')}
+  onChangeNumber={(number) =>
+    onFieldChange('phone', number)
+  }
+  onChangeValidity={(isValid) =>
+    onFieldChange('phoneValid', isValid)
+  }
+  onChangeCountry={(iso2) =>
+    onFieldChange('phoneCountry', iso2)
+  }
+  inputProps={{
+    id: 'request-phone',
+    name: 'phone',
+    autoComplete: 'tel',
+    placeholder: '7000 0000',
+    'aria-invalid': Boolean(errors.phone),
+    className:
+      'h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none',
+  }}
+/>
+</div>
 
         <div className="sm:col-span-2">
           <label className="text-sm font-medium">
@@ -123,7 +138,7 @@ function RequestStepContact({
             }
           >
             <SelectTrigger className="mt-2 w-full">
-              <SelectValue placeholder="Selecciona una opción" />
+              <SelectValue placeholder="Medio de contacto preferido" />
             </SelectTrigger>
 
             <SelectContent>

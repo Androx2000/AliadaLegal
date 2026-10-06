@@ -17,7 +17,8 @@ function RequestWizard() {
     name: '',
     email: '',
     phone: '',
-    contactMethod: 'whatsapp',
+    phoneValid: false,
+    contactMethod: '',
     message: '',
   })
 
@@ -57,9 +58,9 @@ function RequestWizard() {
       newErrors.email = 'Ingresa un correo electrónico válido.'
     }
 
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Ingresa tu número de teléfono.'
-    }
+    if (!formData.phone || !formData.phoneValid) {
+  newErrors.phone = 'Ingresa un número de teléfono válido.'
+}
 
     setErrors(newErrors)
 

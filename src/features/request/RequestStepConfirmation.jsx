@@ -91,7 +91,7 @@ function RequestStepConfirmation({
               </p>
 
               <p className="mt-1 font-medium">
-                {formData.contactMethod === 'whatsapp'
+                {formData.contactMethod === 'Whatsapp'
                   ? 'WhatsApp'
                   : 'Correo electrónico'}
               </p>
