@@ -154,6 +154,7 @@ function RequestStepContact({
             </SelectTrigger>
 
             <SelectContent>
+              
               <SelectItem value="whatsapp">
                 WhatsApp
               </SelectItem>
@@ -161,6 +162,7 @@ function RequestStepContact({
               <SelectItem value="email">
                 Correo electrónico
               </SelectItem>
+
             </SelectContent>
           </Select>
         </div>
