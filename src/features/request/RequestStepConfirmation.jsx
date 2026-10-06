@@ -16,7 +16,9 @@ function RequestStepConfirmation({
   country,
   document,
   formData,
+  onFieldChange,
 }) {
+
   return (
     <div>
       <div>
@@ -112,7 +114,23 @@ function RequestStepConfirmation({
           primero esta solicitud y te indicará el siguiente paso.
         </p>
       </div>
+      <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-xl border p-4">
+  <input
+    type="checkbox"
+    checked={formData.termsAccepted}
+    onChange={(event) =>
+      onFieldChange('termsAccepted', event.target.checked)
+    }
+    className="mt-1 size-4 accent-primary"
+  />
+
+  <span className="text-sm leading-6">
+    He leído y acepto los Términos y Condiciones y autorizo el uso de mis
+    datos para gestionar esta solicitud.
+  </span>
+</label>
     </div>
+    
   )
 }
 

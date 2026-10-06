@@ -6,6 +6,11 @@ import RequestStepConfirmation from './RequestStepConfirmation'
 import RequestStepContact from './RequestStepContact'
 import RequestStepService from './RequestStepService'
 import { resolveRequirements } from './request.utils'
+import { createRequest } from './request.service'
+
+const [isSubmitting, setIsSubmitting] = useState(false)
+const [submitError, setSubmitError] = useState('')
+const [submitted, setSubmitted] = useState(false)
 
 function RequestWizard() {
   const [step, setStep] = useState(1)
@@ -13,14 +18,16 @@ function RequestWizard() {
   const [country, setCountry] = useState('')
   const [document, setDocument] = useState('')
 
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    phoneValid: false,
-    contactMethod: '',
-    message: '',
-  })
+const [formData, setFormData] = useState({
+  name: '',
+  email: '',
+  phone: '',
+  phoneValid: false,
+  phoneCountry: '',
+  contactMethod: '',
+  message: '',
+  termsAccepted: false,
+})
 
   const [errors, setErrors] = useState({})
 
@@ -63,6 +70,40 @@ function RequestWizard() {
 }
 
     setErrors(newErrors)
+
+    async function handleSubmit() {
+  if (!formData.termsAccepted) {
+    setSubmitError(
+      'Debes aceptar los Términos y Condiciones antes de continuar.'
+    )
+    return
+  }
+
+  if (isSubmitting) {
+    return
+  }
+
+  setIsSubmitting(true)
+  setSubmitError('')
+
+  try {
+    await createRequest({
+      country,
+      document,
+      formData,
+    })
+
+    setSubmitted(true)
+  } catch (error) {
+    console.error('Error creating request:', error)
+
+    setSubmitError(
+      'No pudimos enviar tu solicitud. Intenta nuevamente.'
+    )
+  } finally {
+    setIsSubmitting(false)
+  }
+}
 
     return Object.keys(newErrors).length === 0
   }
@@ -151,8 +192,18 @@ function RequestWizard() {
               country={country}
               document={document}
               formData={formData}
-            />
+              onFieldChange={handleFieldChange}
+              />
           )}
+
+          {submitError && (
+  <p
+    className="mt-4 text-sm text-destructive"
+    role="alert"
+  >
+    {submitError}
+  </p>
+)}
 
           <div className="mt-8 flex justify-between gap-3">
             {step > 1 ? (
@@ -181,11 +232,42 @@ function RequestWizard() {
               </Button>
             )}
 
-            {step === 3 && (
-              <Button>
-                Enviar solicitud
-              </Button>
-            )}
+            {step === 3 && !submitted && (
+  <Button
+    onClick={handleSubmit}
+    disabled={
+      isSubmitting ||
+      !formData.termsAccepted
+    }
+  >
+    {isSubmitting
+      ? 'Enviando...'
+      : 'Enviar solicitud'}
+  </Button>
+)}
+
+{step === 3 && submitted ? (
+  <div className="py-10 text-center">
+    <h3 className="font-heading text-2xl">
+      Recibimos tu solicitud
+    </h3>
+
+    <p className="mx-auto mt-3 max-w-md text-muted-foreground">
+      Revisaremos la información y nos comunicaremos contigo por el medio
+      de contacto que seleccionaste.
+    </p>
+  </div>
+) : (
+  step === 3 && (
+    <RequestStepConfirmation
+      country={country}
+      document={document}
+      formData={formData}
+      onFieldChange={handleFieldChange}
+    />
+  )
+)}
+
           </div>
         </div>
       </div>

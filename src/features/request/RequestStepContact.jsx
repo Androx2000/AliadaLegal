@@ -143,28 +143,33 @@ function RequestStepContact({
             Medio de contacto preferido
           </label>
 
-          <Select
-            value={formData.contactMethod}
-            onValueChange={(value) =>
-              onFieldChange('contactMethod', value)
-            }
-          >
-            <SelectTrigger className="mt-2 w-full">
-              <SelectValue placeholder="Medio de contacto preferido" />
-            </SelectTrigger>
+<Select
+  value={formData.contactMethod}
+  onValueChange={(value) =>
+    onFieldChange('contactMethod', value)
+  }
+>
+  <SelectTrigger className="mt-2 w-full">
+    <SelectValue>
+      {formData.contactMethod
+        ? {
+            whatsapp: 'WhatsApp',
+            email: 'Correo electrónico',
+          }[formData.contactMethod]
+        : 'Medio de contacto preferido'}
+    </SelectValue>
+  </SelectTrigger>
 
-            <SelectContent>
-              
-              <SelectItem value="whatsapp">
-                WhatsApp
-              </SelectItem>
+  <SelectContent>
+    <SelectItem value="whatsapp">
+      WhatsApp
+    </SelectItem>
 
-              <SelectItem value="email">
-                Correo electrónico
-              </SelectItem>
-
-            </SelectContent>
-          </Select>
+    <SelectItem value="email">
+      Correo electrónico
+    </SelectItem>
+  </SelectContent>
+</Select>
         </div>
 
         <div className="sm:col-span-2">
