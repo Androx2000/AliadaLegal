@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -11,24 +11,31 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 
-function LegalDialog({
+function LegalDialog(
+  {
   type,
   trigger,
   requireAcceptance = false,
   onAccept,
 }) {
+  const scrollRef = useRef(null)
   const [open, setOpen] = useState(false)
   const [canAccept, setCanAccept] = useState(false)
-
   const isTerms = type === 'terms'
 
-  function handleOpenChange(nextOpen) {
-    setOpen(nextOpen)
+ function handleOpenChange(nextOpen) {
+  setOpen(nextOpen)
 
-    if (nextOpen && requireAcceptance) {
-      setCanAccept(false)
-    }
+  if (nextOpen && requireAcceptance) {
+    setCanAccept(false)
+
+    requestAnimationFrame(() => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop = 0
+      }
+    })
   }
+}
 
   function handleScroll(event) {
     if (!requireAcceptance) {
@@ -77,6 +84,7 @@ function LegalDialog({
         </DialogHeader>
 
         <div
+          ref={scrollRef}
           onScroll={handleScroll}
           className="max-h-[60vh] overflow-y-auto pr-3"
         >

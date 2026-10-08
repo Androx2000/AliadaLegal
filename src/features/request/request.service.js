@@ -17,6 +17,7 @@ export async function createRequest({
         estado_solicitud: 'nuevo',
         terms_accepted: formData.termsAccepted,
         terms_accepted_at: formData.termsAccepted  ? new Date().toISOString()  : null,
+        terms_version: '2026-10',
     }
 
     const { error } = await supabase
