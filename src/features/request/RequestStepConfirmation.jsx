@@ -5,7 +5,11 @@ import {
   MapPin,
   MessageCircle,
   Phone,
+  ShieldCheck,
 } from 'lucide-react'
+
+import { Button } from '@/components/ui/button'
+import LegalDialog from '@/features/legal/LegalDialog'
 
 const contactMethodLabels = {
   whatsapp: 'WhatsApp',
@@ -125,24 +129,91 @@ function RequestStepConfirmation({
         </p>
       </div>
 
-      <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-colors hover:bg-muted/40">
-        <input
-          type="checkbox"
-          checked={formData.termsAccepted}
-          onChange={(event) =>
-            onFieldChange(
-              'termsAccepted',
-              event.target.checked
-            )
-          }
-          className="mt-1 size-4 shrink-0 accent-primary"
-        />
+      <div className="mt-6 rounded-xl border p-4">
+        {formData.termsAccepted ? (
+          <div className="flex items-start gap-3">
+            <ShieldCheck className="mt-0.5 size-5 shrink-0 text-accent" />
 
-        <span className="text-sm leading-6">
-          He leído y acepto los Términos y Condiciones y autorizo el uso
-          de mis datos para gestionar esta solicitud.
-        </span>
-      </label>
+            <div>
+              <p className="text-sm font-semibold">
+                Términos y Condiciones aceptados
+              </p>
+
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                Has leído y aceptado los Términos y Condiciones necesarios
+                para enviar esta solicitud.
+              </p>
+
+              <div className="mt-3 flex flex-wrap gap-4">
+                <LegalDialog
+                  type="terms"
+                  trigger={
+                    <button
+                      type="button"
+                      className="text-sm font-medium underline underline-offset-4"
+                    >
+                      Volver a leer los términos
+                    </button>
+                  }
+                />
+
+                <LegalDialog
+                  type="privacy"
+                  trigger={
+                    <button
+                      type="button"
+                      className="text-sm font-medium underline underline-offset-4"
+                    >
+                      Política de Privacidad
+                    </button>
+                  }
+                />
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <p className="text-sm font-semibold">
+              Antes de continuar
+            </p>
+
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">
+              Debes leer los Términos y Condiciones completos y aceptarlos
+              al final del documento.
+            </p>
+
+            <div className="mt-4 flex flex-wrap gap-3">
+              <LegalDialog
+                type="terms"
+                requireAcceptance
+                onAccept={() =>
+                  onFieldChange(
+                    'termsAccepted',
+                    true
+                  )
+                }
+                trigger={
+                  <Button type="button">
+                    Leer Términos y Condiciones
+                  </Button>
+                }
+              />
+
+              <LegalDialog
+                type="privacy"
+                trigger={
+                  <Button
+                    type="button"
+                    variant="outline"
+                  >
+                    Política de Privacidad
+                  </Button>
+                }
+              />
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

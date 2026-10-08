@@ -1,3 +1,5 @@
+import LegalDialog from '@/features/legal/LegalDialog'
+
 function Footer() {
   const currentYear = new Date().getFullYear()
 
@@ -57,19 +59,29 @@ function Footer() {
           </p>
 
           <div className="mt-4 flex flex-col gap-3 text-sm text-muted-foreground">
-            <button
-              type="button"
-              className="w-fit text-left transition-colors hover:text-foreground"
-            >
-              Términos y Condiciones
-            </button>
+            <LegalDialog
+              type="terms"
+              trigger={
+                <button
+                  type="button"
+                  className="w-fit text-left transition-colors hover:text-foreground"
+                >
+                  Términos y Condiciones
+                </button>
+              }
+            />
 
-            <button
-              type="button"
-              className="w-fit text-left transition-colors hover:text-foreground"
-            >
-              Política de Privacidad
-            </button>
+            <LegalDialog
+              type="privacy"
+              trigger={
+                <button
+                  type="button"
+                  className="w-fit text-left transition-colors hover:text-foreground"
+                >
+                  Política de Privacidad
+                </button>
+              }
+            />
           </div>
         </div>
       </div>
