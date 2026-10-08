@@ -1,11 +1,12 @@
-import Navbar from '@/components/layout/Navbar'
 import Hero from '@/components/home/Hero'
+import Navbar from '@/components/layout/Navbar'
+import Footer from '@/components/layout/Footer'
+import { Toaster } from '@/components/ui/sonner'
+
+import FAQSection from '@/features/faq/FAQSection'
 import ProcessSection from '@/features/process/ProcessSection'
 import RequestWizard from '@/features/request/RequestWizard'
 import ServicesSection from '@/features/services/ServicesSection'
-import { Toaster } from '@/components/ui/sonner'
-
-
 
 function App() {
   return (
@@ -15,13 +16,16 @@ function App() {
       <main>
         <Hero />
         <ServicesSection />
-        <ProcessSection/>
+        <ProcessSection />
         <RequestWizard />
+        <FAQSection />
+        <Footer />
       </main>
+      
       <Toaster
-  position="top-right"
-  richColors
-/>
+        position="top-right"
+        richColors
+      />
     </>
   )
 }
