@@ -1,6 +1,6 @@
 import Hero from '@/components/home/Hero'
-import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
+import Navbar from '@/components/layout/Navbar'
 import { Toaster } from '@/components/ui/sonner'
 
 import FAQSection from '@/features/faq/FAQSection'
@@ -19,9 +19,10 @@ function App() {
         <ProcessSection />
         <RequestWizard />
         <FAQSection />
-        <Footer />
       </main>
-      
+
+      <Footer />
+
       <Toaster
         position="top-right"
         richColors
