@@ -1,10 +1,10 @@
 import {
   CheckCircle2,
+  FileText,
   Mail,
   MapPin,
   MessageCircle,
   Phone,
-  FileText,
 } from 'lucide-react'
 
 const contactMethodLabels = {
@@ -18,7 +18,6 @@ function RequestStepConfirmation({
   formData,
   onFieldChange,
 }) {
-
   return (
     <div>
       <div>
@@ -89,20 +88,31 @@ function RequestStepConfirmation({
             </div>
           </div>
 
-        <div className="flex gap-3 sm:col-span-2">
-  <MessageCircle className="mt-0.5 size-5 shrink-0 text-accent" />
+          <div className="flex gap-3 sm:col-span-2">
+            <MessageCircle className="mt-0.5 size-5 shrink-0 text-accent" />
 
-  <div>
-    <p className="text-xs font-medium text-muted-foreground">
-      Contacto preferido
-    </p>
+            <div>
+              <p className="text-xs font-medium text-muted-foreground">
+                Contacto preferido
+              </p>
 
-    <p className="mt-1 font-medium">
-      {contactMethodLabels[formData.contactMethod]}
-    </p>
-    
-  </div>
-</div>
+              <p className="mt-1 font-medium">
+                {contactMethodLabels[formData.contactMethod]}
+              </p>
+            </div>
+          </div>
+
+          {formData.message && (
+            <div className="sm:col-span-2">
+              <p className="text-xs font-medium text-muted-foreground">
+                Información adicional
+              </p>
+
+              <p className="mt-1 whitespace-pre-wrap text-sm leading-6">
+                {formData.message}
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -110,27 +120,30 @@ function RequestStepConfirmation({
         <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-accent" />
 
         <p className="text-sm leading-6">
-          Todavía no se enviará ningún documento sensible. Un asesor revisará
-          primero esta solicitud y te indicará el siguiente paso.
+          Todavía no se enviará ningún documento sensible. Un asesor
+          revisará primero esta solicitud y te indicará el siguiente paso.
         </p>
       </div>
-      <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-xl border p-4">
-  <input
-    type="checkbox"
-    checked={formData.termsAccepted}
-    onChange={(event) =>
-      onFieldChange('termsAccepted', event.target.checked)
-    }
-    className="mt-1 size-4 accent-primary"
-  />
 
-  <span className="text-sm leading-6">
-    He leído y acepto los Términos y Condiciones y autorizo el uso de mis
-    datos para gestionar esta solicitud.
-  </span>
-</label>
+      <label className="mt-6 flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-colors hover:bg-muted/40">
+        <input
+          type="checkbox"
+          checked={formData.termsAccepted}
+          onChange={(event) =>
+            onFieldChange(
+              'termsAccepted',
+              event.target.checked
+            )
+          }
+          className="mt-1 size-4 shrink-0 accent-primary"
+        />
+
+        <span className="text-sm leading-6">
+          He leído y acepto los Términos y Condiciones y autorizo el uso
+          de mis datos para gestionar esta solicitud.
+        </span>
+      </label>
     </div>
-    
   )
 }
 

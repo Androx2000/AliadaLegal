@@ -1,12 +1,12 @@
 import { useMemo, useState } from 'react'
-
 import { Button } from '@/components/ui/button'
-
 import RequestStepConfirmation from './RequestStepConfirmation'
 import RequestStepContact from './RequestStepContact'
 import RequestStepService from './RequestStepService'
 import { createRequest } from './request.service'
 import { resolveRequirements } from './request.utils'
+import { toast } from 'sonner'
+import RequestSuccess from './RequestSuccess'
 
 function RequestWizard() {
   const [step, setStep] = useState(1)
@@ -106,22 +106,36 @@ function RequestWizard() {
     setSubmitError('')
 
     try {
-      await createRequest({
-        country,
-        document,
-        formData,
-      })
+  await createRequest({
+    country,
+    document,
+    formData,
+  })
 
-      setSubmitted(true)
-    } catch (error) {
-      console.error(
-        'Error creating request:',
-        error
-      )
+  setSubmitted(true)
 
-      setSubmitError(
-        'No pudimos enviar tu solicitud. Intenta nuevamente.'
-      )
+  toast.success('Solicitud enviada', {
+    description:
+      'Recibimos tus datos correctamente.',
+  })
+
+    }
+catch (error) {
+  console.error(
+    'Error creating request:',
+    error
+  )
+
+  const message =
+    'No pudimos enviar tu solicitud. Intenta nuevamente.'
+
+  setSubmitError(message)
+
+  toast.error('No pudimos enviar la solicitud', {
+    description:
+      'Tus datos siguen en el formulario. Puedes intentarlo nuevamente.',
+  })
+
     } finally {
       setIsSubmitting(false)
     }
@@ -207,18 +221,12 @@ function RequestWizard() {
             />
           )}
 
-          {step === 3 && submitted && (
-            <div className="py-10 text-center">
-              <h3 className="font-heading text-2xl">
-                Recibimos tu solicitud
-              </h3>
-
-              <p className="mx-auto mt-3 max-w-md text-muted-foreground">
-                Revisaremos la información y nos comunicaremos contigo por
-                el medio de contacto que seleccionaste.
-              </p>
-            </div>
-          )}
+           {step === 3 && submitted && (
+               <RequestSuccess
+                contactMethod={formData.contactMethod}
+                email={formData.email}
+                  />
+             )}
 
           {submitError && (
             <p
