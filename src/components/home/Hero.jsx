@@ -32,7 +32,11 @@ function Hero() {
             <Button
               size="lg"
               className="group"
+              render={
+                    <a href="#iniciar-tramite" />
+                  }
             >
+              
               Iniciar trámite
 
               <ArrowRight
